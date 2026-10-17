@@ -282,16 +282,27 @@ function Camera({ last, onCapture, onGallery, onPro }: {
             {last ? <img src={last.src} className="h-full w-full object-cover" alt="" /> : null}
             {last?.pending && <div className="shimmer absolute inset-0" />}
           </button>
-          <div className="mode-pill">
-            <span className="mode-center" aria-hidden />
-            <div ref={railRef} onScroll={onRail} className="mode-rail" role="tablist" aria-label="Camera modes">
-              {MODES.map((m, i) => (
-                <button key={m.id} role="tab" aria-selected={i === modeIdx} onClick={() => scrollToMode(i)}
-                  className={`mode-chip ${i === modeIdx ? "mode-chip-active" : ""}`}>
-                  {m.label}
-                </button>
-              ))}
-            </div>
+          <div className={`mode-pill ${modesOpen ? "mode-pill-open" : "mode-pill-closed"}`}>
+            {modesOpen ? (
+              <>
+                <span className="mode-center" aria-hidden />
+                <div ref={railRef} onScroll={() => { onRail(); armClose(); }} className="mode-rail" role="tablist" aria-label="Camera modes">
+                  {MODES.map((m, i) => (
+                    <button key={m.id} role="tab" aria-selected={i === modeIdx} onClick={() => { scrollToMode(i); armClose(); }}
+                      className={`mode-chip ${i === modeIdx ? "mode-chip-active" : ""}`}>
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="mode-pair" role="tablist" aria-label="Camera modes">
+                {(modeIdx < MODES.length - 1 ? [modeIdx, modeIdx + 1] : [modeIdx - 1, modeIdx]).map((i) => (
+                  <button key={MODES[i]!.id} role="tab" aria-selected={i === modeIdx} onClick={() => setModesOpen(true)}
+                    className={`mode-pair-chip ${i === modeIdx ? "mode-pair-on" : ""}`}>{MODES[i]!.label}</button>
+                ))}
+              </div>
+            )}
           </div>
           <button onClick={() => { setSpin((x) => x + 180); setFacing((v) => (v === "user" ? "environment" : "user")); }} className="cam-flip" aria-label="Switch camera">
             <svg viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" style={{ transform: `rotate(${spin}deg)` }}>
