@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Toaster, toast } from "sonner";
 import {
   RefreshCw, Zap, ZapOff, Sparkles, Wand2, Crop, SlidersHorizontal, Trash2, Download, Crown, Check, ChevronLeft, Images,
-  Share2, Pencil, X, RotateCw, FlipHorizontal, FlipVertical, Palette, Loader2,
+  Share2, Pencil, Plus, X, RotateCw, FlipHorizontal, FlipVertical, Palette, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { aiEditImage, getPublicConfig } from "@/lib/ai.functions";
@@ -118,7 +118,7 @@ function App() {
             onGallery={() => setView("gallery")} onPro={() => setView("pro")} />
         )}
         {view === "gallery" && (
-          <Gallery photos={photos} onBack={() => setView("camera")}
+          <Gallery photos={photos} onBack={() => setView("camera")} onImported={refresh}
             onEdit={(p) => { setStudioPhoto(p); setView("studio"); }}
             onDelete={async (id) => { await deletePhoto(id); refresh(); }} />
         )}
@@ -289,10 +289,19 @@ function download(p: Photo) {
   const a = document.createElement("a"); a.href = p.src; a.download = `lumen-${p.id}.jpg`; a.click();
   toast.success("Saved");
 }
-function Gallery({ photos, onBack, onEdit, onDelete }: {
-  photos: Photo[]; onBack: () => void; onEdit: (p: Photo) => void; onDelete: (id: string) => void;
+function Gallery({ photos, onBack, onEdit, onDelete, onImported }: {
+  photos: Photo[]; onBack: () => void; onEdit: (p: Photo) => void; onDelete: (id: string) => void; onImported: () => void;
 }) {
   const [open, setOpen] = useState<Photo | null>(null);
+  const pickRef = useRef<HTMLInputElement>(null);
+  const importFiles = async (files: FileList | null) => {
+    if (!files?.length) return;
+    for (const f of Array.from(files)) {
+      const src = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(f); });
+      await savePhoto({ id: uid(), src: await render(src, {}, 2048), createdAt: f.lastModified || Date.now(), label: "Original" });
+    }
+    onImported();
+  };
   return (
     <div className="gallery-page relative h-full">
       <div className="h-full overflow-y-auto pb-[max(env(safe-area-inset-bottom),40px)]">
@@ -311,6 +320,12 @@ function Gallery({ photos, onBack, onEdit, onDelete }: {
         className="gallery-back absolute left-4 top-[max(env(safe-area-inset-top),16px)] grid size-11 place-items-center rounded-full transition ease-ios active:scale-90">
         <ChevronLeft className="size-5" />
       </button>
+      <input ref={pickRef} type="file" accept="image/*" multiple hidden onChange={(e) => { importFiles(e.target.files); e.target.value = ""; }} />
+      <button onClick={() => pickRef.current?.click()} aria-label="Add photos from device"
+        className="gallery-back absolute right-4 top-[max(env(safe-area-inset-top),16px)] grid size-11 place-items-center rounded-full transition ease-ios active:scale-90">
+        <Plus className="size-5" />
+      </button>
+      {photos.length === 0 && <button onClick={() => pickRef.current?.click()} className="absolute inset-0 m-auto h-fit w-fit text-[15px] text-primary">Add photos from your device</button>}
       {open && <Viewer photo={open} onClose={() => setOpen(null)} onEdit={() => { onEdit(open); setOpen(null); }} onDelete={() => { onDelete(open.id); setOpen(null); }} />}
     </div>
   );
