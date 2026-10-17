@@ -231,28 +231,26 @@ function Camera({ last, onCapture, onGallery, onPro }: {
   void setZoom; void dial; void setDial;
 
   return (
-    <div className="cam-root relative flex h-full w-full flex-col">
-      <div className="cam-topbar relative z-20 flex items-center justify-center gap-9 pt-[max(env(safe-area-inset-top),18px)] pb-4">
+    <div className="cam-root relative h-full w-full">
+      <div className="cam-topbar absolute inset-x-0 top-0 z-20 flex items-center justify-center gap-9 pt-[max(env(safe-area-inset-top),18px)] pb-4">
         <button onClick={() => setFlash((f) => !f)} className="cam-icon" aria-label="Flash">
           {flash ? <Zap className="size-[22px] text-primary" fill="currentColor" strokeWidth={1.6} /> : <ZapOff className="size-[22px]" strokeWidth={1.6} />}
         </button>
         <button onClick={onPro} className="cam-pro" aria-label="Subscription">PRO</button>
       </div>
 
-      <div className="relative flex flex-1 items-center justify-center overflow-hidden">
-        <div className="relative w-full overflow-hidden transition-[aspect-ratio] duration-700 ease-ios"
-          style={{ aspectRatio: mode.aspect === 1 ? "1" : mode.aspect > 1 ? "16/9" : "3/4", maxHeight: "100%" }}>
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="relative h-full w-full overflow-hidden">
           <video ref={videoRef} autoPlay playsInline muted
             className="absolute inset-0 h-full w-full object-cover transition-[transform,filter] duration-500 ease-ios"
             style={{ transform: facing === "user" ? "scaleX(-1)" : undefined, filter: mode.id === "night" ? "brightness(1.3) contrast(1.05)" : undefined }} />
-          <div className="cam-grid pointer-events-none absolute inset-0" />
-          {mode.id === "portrait" && <div className="pop-in pointer-events-none absolute inset-0 shadow-[inset_0_0_140px_50px_var(--scrim)]" />}
+                    {mode.id === "portrait" && <div className="pop-in pointer-events-none absolute inset-0 shadow-[inset_0_0_140px_50px_var(--scrim)]" />}
           {err && <div className="absolute inset-0 grid place-items-center p-8 text-center text-[15px] text-muted-foreground">{err}</div>}
           {blink && <div className="absolute inset-0 bg-shutter" />}
         </div>
       </div>
 
-      <div className="cam-bottom pb-[max(env(safe-area-inset-bottom),18px)]">
+      <div className="cam-bottom absolute inset-x-0 bottom-0 z-20 pb-[max(env(safe-area-inset-bottom),18px)]">
         <div className="flex justify-center pt-5 pb-5">
           <button onClick={shoot} aria-label="Shutter" className="cam-shutter">
             <span className={busy ? "scale-[.86] opacity-80" : ""} />
