@@ -173,14 +173,12 @@ html, body { background: var(--background); color: var(--foreground); font-famil
 @utility glass {
   background: var(--glass);
   backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
   border: 1px solid var(--glass-border);
   box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.25), 0 10px 40px -10px oklch(0 0 0 / 0.6);
 }
 @utility glass-strong {
   background: var(--glass-strong);
   backdrop-filter: blur(40px) saturate(200%);
-  -webkit-backdrop-filter: blur(40px) saturate(200%);
   border: 1px solid var(--glass-border);
   box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.3), 0 20px 60px -15px oklch(0 0 0 / 0.7);
 }
@@ -213,3 +211,25 @@ html, body { background: var(--background); color: var(--foreground); font-famil
 :root { --payment-brand-a: oklch(0.6 0.23 25); --payment-brand-b: oklch(0.8 0.18 80); }
 .mastercard-mark i { width: 20px; height: 20px; border-radius: 50%; background: var(--payment-brand-a); }
 .mastercard-mark i + i { margin-left: -7px; background: var(--payment-brand-b); opacity: .9; }
+
+/* Mode rail under the shutter: peeks, scroll-snaps, fades at edges */
+.mode-rail {
+  display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x mandatory;
+  padding: 6px 50%; scrollbar-width: none;
+  mask-image: linear-gradient(90deg, transparent, #000 32%, #000 68%, transparent);
+}
+.mode-rail::-webkit-scrollbar { display: none; }
+.mode-chip {
+  flex: none; scroll-snap-align: center; padding: 7px 14px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--muted-foreground);
+  transition: color 400ms var(--spring), background 400ms var(--spring), transform 400ms var(--spring), box-shadow 400ms var(--spring);
+  transform: scale(.92);
+}
+.mode-chip-active {
+  color: var(--primary); background: var(--glass-strong); transform: scale(1);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.3), 0 4px 16px oklch(0 0 0 / 0.35);
+}
+.gallery-fade { background: linear-gradient(to bottom, var(--gallery-surface), transparent); }
+.gallery-tile img { transition: transform 500ms var(--spring); }
+.gallery-tile:active img { transform: scale(.96); }
