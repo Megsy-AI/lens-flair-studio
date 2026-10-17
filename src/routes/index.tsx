@@ -18,10 +18,10 @@ import paywallBg from "@/assets/paywall.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Lumen — كاميرا الذكاء الاصطناعي" },
-      { name: "description", content: "كاميرا بتصميم iOS زجاجي تحسّن صورك بالذكاء الاصطناعي وتحوّلها لليجو وأنمي وأكثر." },
-      { property: "og:title", content: "Lumen — كاميرا الذكاء الاصطناعي" },
-      { property: "og:description", content: "التقط، حسّن، وحوّل صورك بالذكاء الاصطناعي." },
+      { title: "Lumen — AI Camera" },
+      { name: "description", content: "An iOS-style glass camera that enhances your photos with AI." },
+      { property: "og:title", content: "Lumen — AI Camera" },
+      { property: "og:description", content: "Shoot, enhance and transform your photos with AI." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -101,10 +101,10 @@ function App() {
       setPhotos((p) => p.map((x) => (x.id === id ? done : x)));
       return done;
     } catch (e) {
-      const fallback: Photo = { ...pending, pending: false, label: "أصلية" };
+      const fallback: Photo = { ...pending, pending: false, label: "Original" };
       await savePhoto(fallback);
       setPhotos((p) => p.map((x) => (x.id === id ? fallback : x)));
-      toast.error(e instanceof Error ? e.message : "فشل المعالجة");
+      toast.error(e instanceof Error ? e.message : "Processing failed");
       return null;
     }
   }, [edit]);
@@ -114,7 +114,7 @@ function App() {
       <Toaster position="top-center" theme="dark" />
       <div key={view} className="pop-in h-full">
         {view === "camera" && (
-          <Camera last={photos[0]} onCapture={(img, m) => runAI(img, CAMERA_PROMPT + m.extra, "محسّنة")}
+          <Camera last={photos[0]} onCapture={(img, m) => runAI(img, CAMERA_PROMPT + m.extra, "Enhanced")}
             onGallery={() => setView("gallery")} onPro={() => setView("pro")} />
         )}
         {view === "gallery" && (
@@ -163,7 +163,7 @@ function Camera({ last, onCapture, onGallery, onPro }: {
         const cap = (t.getCapabilities?.() ?? {}) as { zoom?: { min: number; max: number } };
         hwRef.current = cap.zoom ? { min: cap.zoom.min, max: cap.zoom.max } : null;
       })
-      .catch(() => setErr("اسمح بالوصول للكاميرا لبدء التصوير"));
+      .catch(() => setErr("Allow camera access to start shooting"));
     return () => stream?.getTracks().forEach((t) => t.stop());
   }, [facing]);
 
@@ -231,14 +231,12 @@ function Camera({ last, onCapture, onGallery, onPro }: {
   void setZoom; void dial; void setDial;
 
   return (
-    <div className="relative flex h-full w-full flex-col">
-      <div className="relative z-20 flex items-center justify-between px-5 pt-[max(env(safe-area-inset-top),14px)] pb-3">
-        <button onClick={() => setFlash((f) => !f)} className="glass grid size-10 place-items-center rounded-full transition ease-ios active:scale-90" aria-label="الفلاش">
-          {flash ? <Zap className="size-5 text-primary" fill="currentColor" /> : <ZapOff className="size-5" />}
+    <div className="cam-root relative flex h-full w-full flex-col">
+      <div className="cam-topbar relative z-20 flex items-center justify-center gap-9 pt-[max(env(safe-area-inset-top),18px)] pb-4">
+        <button onClick={() => setFlash((f) => !f)} className="cam-icon" aria-label="Flash">
+          {flash ? <Zap className="size-[22px] text-primary" fill="currentColor" strokeWidth={1.6} /> : <ZapOff className="size-[22px]" strokeWidth={1.6} />}
         </button>
-        <button onClick={onPro} className="glass h-10 rounded-full px-4 text-xs font-bold tracking-wide transition ease-ios active:scale-90" aria-label="الاشتراك">
-          PRO
-        </button>
+        <button onClick={onPro} className="cam-pro" aria-label="Subscription">PRO</button>
       </div>
 
       <div className="relative flex flex-1 items-center justify-center overflow-hidden">
@@ -247,31 +245,35 @@ function Camera({ last, onCapture, onGallery, onPro }: {
           <video ref={videoRef} autoPlay playsInline muted
             className="absolute inset-0 h-full w-full object-cover transition-[transform,filter] duration-500 ease-ios"
             style={{ transform: facing === "user" ? "scaleX(-1)" : undefined, filter: mode.id === "night" ? "brightness(1.3) contrast(1.05)" : undefined }} />
+          <div className="cam-grid pointer-events-none absolute inset-0" />
           {mode.id === "portrait" && <div className="pop-in pointer-events-none absolute inset-0 shadow-[inset_0_0_140px_50px_var(--scrim)]" />}
-          {err && <div className="absolute inset-0 grid place-items-center p-8 text-center text-muted-foreground">{err}</div>}
+          {err && <div className="absolute inset-0 grid place-items-center p-8 text-center text-[15px] text-muted-foreground">{err}</div>}
           {blink && <div className="absolute inset-0 bg-shutter" />}
         </div>
       </div>
 
-      <div className="flex items-center justify-between px-8 pt-5 pb-3">
-        <button onClick={onGallery} className="relative size-14 overflow-hidden rounded-2xl border border-glass-border bg-glass transition ease-ios active:scale-90" aria-label="المعرض">
-          {last ? <img src={last.src} className="h-full w-full object-cover" alt="" /> : <Images className="m-auto size-6 text-muted-foreground" />}
-          {last?.pending && <div className="shimmer absolute inset-0" />}
-        </button>
-        <button onClick={shoot} aria-label="التقاط" className="grid size-[78px] place-items-center rounded-full border-4 border-shutter transition ease-ios active:scale-90">
-          <span className={`size-[62px] rounded-full bg-shutter transition-all duration-300 ease-ios ${busy ? "scale-75 opacity-70" : ""}`} />
-        </button>
-        <span className="size-14" aria-hidden />
-      </div>
-
-      <div className="mode-rail-wrap relative pb-[max(env(safe-area-inset-bottom),20px)]">
-        <div ref={railRef} onScroll={onRail} className="mode-rail" role="tablist" aria-label="أوضاع التصوير">
-          {MODES.map((m, i) => (
-            <button key={m.id} role="tab" aria-selected={i === modeIdx} onClick={() => scrollToMode(i)}
-              className={`mode-chip ${i === modeIdx ? "mode-chip-active" : ""}`}>
-              {({ night: "ليلي", portrait: "بورتريه", photo: "صورة", square: "مربع", pano: "بانوراما" })[m.id]}
-            </button>
-          ))}
+      <div className="cam-bottom pb-[max(env(safe-area-inset-bottom),18px)]">
+        <div className="flex justify-center pt-5 pb-5">
+          <button onClick={shoot} aria-label="Shutter" className="cam-shutter">
+            <span className={busy ? "scale-[.86] opacity-80" : ""} />
+          </button>
+        </div>
+        <div className="flex items-center gap-3 px-5">
+          <button onClick={onGallery} className="cam-thumb" aria-label="Photos">
+            {last ? <img src={last.src} className="h-full w-full object-cover" alt="" /> : null}
+            {last?.pending && <div className="shimmer absolute inset-0" />}
+          </button>
+          <div className="mode-pill">
+            <div ref={railRef} onScroll={onRail} className="mode-rail" role="tablist" aria-label="Camera modes">
+              {MODES.map((m, i) => (
+                <button key={m.id} role="tab" aria-selected={i === modeIdx} onClick={() => scrollToMode(i)}
+                  className={`mode-chip ${i === modeIdx ? "mode-chip-active" : ""}`}>
+                  {({ night: "NIGHT", portrait: "PORTRAIT", photo: "PHOTO", square: "SQUARE", pano: "PANO" })[m.id]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <span className="size-[52px] shrink-0" aria-hidden />
         </div>
       </div>
     </div>
@@ -283,11 +285,11 @@ async function share(p: Photo) {
   const blob = await (await fetch(p.src)).blob();
   const file = new File([blob], `lumen-${p.id}.jpg`, { type: blob.type });
   if (navigator.canShare?.({ files: [file] })) await navigator.share({ files: [file], title: "Lumen" }).catch(() => {});
-  else toast.info("المشاركة غير مدعومة على هذا المتصفح");
+  else toast.info("Sharing isn't supported on this browser");
 }
 function download(p: Photo) {
   const a = document.createElement("a"); a.href = p.src; a.download = `lumen-${p.id}.jpg`; a.click();
-  toast.success("تم الحفظ");
+  toast.success("Saved");
 }
 function Gallery({ photos, onBack, onEdit, onDelete }: {
   photos: Photo[]; onBack: () => void; onEdit: (p: Photo) => void; onDelete: (id: string) => void;
@@ -298,7 +300,7 @@ function Gallery({ photos, onBack, onEdit, onDelete }: {
       <div className="h-full overflow-y-auto pt-[calc(max(env(safe-area-inset-top),14px)+60px)] pb-[max(env(safe-area-inset-bottom),12px)]">
         <div className="grid grid-cols-3 gap-[2px]">
           {photos.map((p) => (
-            <button key={p.id} disabled={p.pending} aria-label="عرض الصورة" onClick={() => setOpen(p)}
+            <button key={p.id} disabled={p.pending} aria-label="View photo" onClick={() => setOpen(p)}
               className="gallery-tile relative aspect-square overflow-hidden bg-muted">
               <img src={p.src} className={`h-full w-full object-cover ${p.pending ? "blur-sm" : ""}`} alt="" loading="lazy" />
               {p.pending && <div className="shimmer absolute inset-0" />}
@@ -307,7 +309,7 @@ function Gallery({ photos, onBack, onEdit, onDelete }: {
         </div>
       </div>
       <div className="gallery-fade pointer-events-none absolute inset-x-0 top-0 h-28" />
-      <button onClick={onBack} aria-label="العودة للكاميرا"
+      <button onClick={onBack} aria-label="Back to camera"
         className="glass absolute left-4 top-[max(env(safe-area-inset-top),14px)] grid size-11 place-items-center rounded-full transition ease-ios active:scale-90">
         <ChevronLeft className="size-5" />
       </button>
@@ -320,18 +322,18 @@ function Viewer({ photo, onClose, onEdit, onDelete }: { photo: Photo; onClose: (
   const [orig, setOrig] = useState(false);
   const [chrome, setChrome] = useState(true);
   return (
-    <div className="pop-in fixed inset-0 z-40 bg-background" dir="rtl">
+    <div className="pop-in fixed inset-0 z-40 bg-background" dir="ltr">
       <div className="absolute inset-0 grid place-items-center"
         onClick={() => setChrome((c) => !c)}
         onPointerDown={() => setTimeout(() => setOrig(true), 0)} onPointerUp={() => setOrig(false)} onPointerLeave={() => setOrig(false)}>
         <img src={orig && photo.original ? photo.original : photo.src} className="max-h-full max-w-full object-contain transition-opacity duration-300" alt="" />
       </div>
       <div className={`absolute inset-x-0 top-0 flex items-center px-4 pt-[max(env(safe-area-inset-top),14px)] pb-3 transition-all duration-500 ease-ios ${chrome ? "" : "-translate-y-full opacity-0"}`}>
-        <button onClick={onClose} className="glass flex h-10 items-center gap-1 rounded-full pl-4 pr-2 text-sm"><ChevronLeft className="size-5 rotate-180" />رجوع</button>
+        <button onClick={onClose} className="glass flex h-10 items-center gap-1 rounded-full pl-4 pr-2 text-sm"><ChevronLeft className="size-5 " />Back</button>
       </div>
       <div className={`absolute bottom-[max(env(safe-area-inset-bottom),22px)] left-1/2 -translate-x-1/2 transition-all duration-500 ease-ios ${chrome ? "" : "translate-y-[200%] opacity-0"}`}>
         <div className="glass-strong flex gap-2 rounded-full p-2">
-          {([[Download, "حفظ", () => download(photo), ""], [Share2, "مشاركة", () => share(photo), ""], [Pencil, "تعديل", onEdit, "text-primary"], [Trash2, "مسح", onDelete, "text-destructive"]] as const).map(([I, l, fn, c]) => (
+          {([[Download, "Save", () => download(photo), ""], [Share2, "Share", () => share(photo), ""], [Pencil, "Edit", onEdit, "text-primary"], [Trash2, "Delete", onDelete, "text-destructive"]] as const).map(([I, l, fn, c]) => (
             <button key={l} onClick={fn} className={`flex w-16 flex-col items-center gap-0.5 rounded-full py-1.5 text-[10px] transition ease-ios active:scale-90 ${c}`}><I className="size-5" />{l}</button>
           ))}
         </div>
@@ -341,26 +343,26 @@ function Viewer({ photo, onClose, onEdit, onDelete }: { photo: Photo; onClose: (
 }
 
 /* ---------------- Studio ---------------- */
-const CROPS = [{ l: "حر", v: 0 }, { l: "1:1", v: 1 }, { l: "4:5", v: 4 / 5 }, { l: "3:4", v: 3 / 4 }, { l: "2:3", v: 2 / 3 }, { l: "9:16", v: 9 / 16 }, { l: "4:3", v: 4 / 3 }, { l: "16:9", v: 16 / 9 }];
+const CROPS = [{ l: "Free", v: 0 }, { l: "1:1", v: 1 }, { l: "4:5", v: 4 / 5 }, { l: "3:4", v: 3 / 4 }, { l: "2:3", v: 2 / 3 }, { l: "9:16", v: 9 / 16 }, { l: "4:3", v: 4 / 3 }, { l: "16:9", v: 16 / 9 }];
 const ADJ = [
-  { k: "exposure", l: "التعريض", min: -50, max: 50, d: 0 },
-  { k: "brightness", l: "السطوع", min: 50, max: 150, d: 100 },
-  { k: "contrast", l: "التباين", min: 50, max: 150, d: 100 },
-  { k: "saturate", l: "التشبع", min: 0, max: 200, d: 100 },
-  { k: "warmth", l: "الدفء", min: -50, max: 50, d: 0 },
-  { k: "tint", l: "الصبغة", min: -90, max: 90, d: 0 },
-  { k: "fade", l: "البهتان", min: 0, max: 60, d: 0 },
-  { k: "mono", l: "أبيض وأسود", min: 0, max: 100, d: 0 },
-  { k: "blur", l: "النعومة", min: 0, max: 10, d: 0 },
-  { k: "vignette", l: "التظليل", min: 0, max: 80, d: 0 },
+  { k: "exposure", l: "Exposure", min: -50, max: 50, d: 0 },
+  { k: "brightness", l: "Brilliance", min: 50, max: 150, d: 100 },
+  { k: "contrast", l: "Contrast", min: 50, max: 150, d: 100 },
+  { k: "saturate", l: "Saturation", min: 0, max: 200, d: 100 },
+  { k: "warmth", l: "Warmth", min: -50, max: 50, d: 0 },
+  { k: "tint", l: "Tint", min: -90, max: 90, d: 0 },
+  { k: "fade", l: "Fade", min: 0, max: 60, d: 0 },
+  { k: "mono", l: "Mono", min: 0, max: 100, d: 0 },
+  { k: "blur", l: "Softness", min: 0, max: 10, d: 0 },
+  { k: "vignette", l: "Vignette", min: 0, max: 80, d: 0 },
 ] as const;
 type Adj = Record<(typeof ADJ)[number]["k"], number>;
 const ADJ0 = Object.fromEntries(ADJ.map((a) => [a.k, a.d])) as Adj;
 const PRESETS: { l: string; a: Partial<Adj> }[] = [
-  { l: "أصلي", a: {} }, { l: "زاهي", a: { saturate: 140, contrast: 110 } }, { l: "دافئ", a: { warmth: 30, brightness: 104 } },
-  { l: "بارد", a: { warmth: -30, tint: 10 } }, { l: "دراما", a: { contrast: 140, saturate: 80, vignette: 50 } },
-  { l: "فضي", a: { mono: 100, contrast: 120 } }, { l: "نوار", a: { mono: 100, contrast: 150, brightness: 90, vignette: 60 } },
-  { l: "فيلم", a: { fade: 25, warmth: 15, saturate: 85 } }, { l: "حالم", a: { blur: 1, brightness: 110, fade: 20 } }, { l: "غروب", a: { warmth: 45, tint: -15, saturate: 120 } },
+  { l: "Original", a: {} }, { l: "Vivid", a: { saturate: 140, contrast: 110 } }, { l: "Warm", a: { warmth: 30, brightness: 104 } },
+  { l: "Cool", a: { warmth: -30, tint: 10 } }, { l: "Drama", a: { contrast: 140, saturate: 80, vignette: 50 } },
+  { l: "Silver", a: { mono: 100, contrast: 120 } }, { l: "Noir", a: { mono: 100, contrast: 150, brightness: 90, vignette: 60 } },
+  { l: "Film", a: { fade: 25, warmth: 15, saturate: 85 } }, { l: "Dreamy", a: { blur: 1, brightness: 110, fade: 20 } }, { l: "Sunset", a: { warmth: 45, tint: -15, saturate: 120 } },
 ];
 const cssOf = (a: Adj) => `brightness(${(a.brightness + a.exposure) / 100}) contrast(${(a.contrast - a.fade * 0.5) / 100}) saturate(${a.saturate / 100}) sepia(${Math.max(0, a.warmth) / 100}) hue-rotate(${a.tint + (a.warmth < 0 ? a.warmth : 0)}deg) grayscale(${a.mono / 100}) blur(${a.blur}px)`;
 
@@ -375,7 +377,7 @@ function Studio({ photos, photo, setPhoto, modes, onBack, onPaywall, runAI, onSa
   runAI: (src: string, prompt: string, label: string, original?: string) => Promise<Photo | null>; onSaved: () => void;
 }) {
   const [tab, setTab] = useState<"ai" | "filters" | "adjust" | "crop">("ai");
-  const [cat, setCat] = useState("الكل");
+  const [cat, setCat] = useState("All");
   const [crop, setCrop] = useState(0);
   const [rotate, setRotate] = useState(0);
   const [flip, setFlip] = useState({ x: false, y: false });
@@ -386,15 +388,15 @@ function Studio({ photos, photo, setPhoto, modes, onBack, onPaywall, runAI, onSa
   const [left, setLeft] = useState(DAILY_TRIALS);
   const fileRef = useRef<HTMLInputElement>(null);
   useEffect(() => setLeft(trialsLeft()), [ad]);
-  const cats = ["الكل", ...CATEGORIES.filter((c) => modes.some((m) => m.category === c)), ...[...new Set(modes.map((m) => m.category))].filter((c) => !CATEGORIES.includes(c))];
+  const cats = ["All", ...CATEGORIES.filter((c) => modes.some((m) => m.category === c)), ...[...new Set(modes.map((m) => m.category))].filter((c) => !CATEGORIES.includes(c))];
 
   if (!photo) {
     return (
-      <div className="h-full overflow-y-auto pb-20" dir="rtl">
+      <div className="h-full overflow-y-auto pb-20" dir="ltr">
         <div className="glass sticky top-0 z-30 flex items-center justify-between border-x-0 border-t-0 px-4 pt-[max(env(safe-area-inset-top),14px)] pb-3">
-          <button onClick={onBack} className="glass grid size-10 place-items-center rounded-full"><ChevronLeft className="size-5 rotate-180" /></button>
-          <h1 className="text-[17px] font-semibold">اختر صورة</h1>
-          <button onClick={() => fileRef.current?.click()} className="text-sm text-primary">من الجهاز</button>
+          <button onClick={onBack} className="glass grid size-10 place-items-center rounded-full"><ChevronLeft className="size-5 " /></button>
+          <h1 className="text-[17px] font-semibold">Select Photo</h1>
+          <button onClick={() => fileRef.current?.click()} className="text-sm text-primary">Import</button>
         </div>
         <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => {
           const f = e.target.files?.[0]; if (!f) return;
@@ -402,7 +404,7 @@ function Studio({ photos, photo, setPhoto, modes, onBack, onPaywall, runAI, onSa
           r.onload = async () => setPhoto({ id: uid(), src: await render(r.result as string), createdAt: Date.now() });
           r.readAsDataURL(f);
         }} />
-        {photos.length === 0 && <p className="mt-32 text-center text-muted-foreground">المعرض فارغ — ارفع صورة من جهازك</p>}
+        {photos.length === 0 && <p className="mt-32 text-center text-muted-foreground">No photos — import one</p>}
         <div className="grid grid-cols-3 gap-[3px] p-[3px]">
           {photos.filter((p) => !p.pending).map((p) => (
             <button key={p.id} onClick={() => setPhoto(p)} className="aspect-square overflow-hidden rounded-[6px]"><img src={p.src} className="h-full w-full object-cover" alt="" /></button>
@@ -421,20 +423,20 @@ function Studio({ photos, photo, setPhoto, modes, onBack, onPaywall, runAI, onSa
   };
   const saveManual = async () => {
     const out = await render(photo.src, { crop, rotate, flipX: flip.x, flipY: flip.y, filter: cssOf(adj), vignette: adj.vignette }, 2048);
-    const p: Photo = { id: uid(), src: out, original: photo.src, createdAt: Date.now(), label: "معدّلة" };
+    const p: Photo = { id: uid(), src: out, original: photo.src, createdAt: Date.now(), label: "Edited" };
     await savePhoto(p); onSaved(); setPhoto(p); reset();
   };
   const cur = ADJ.find((a) => a.k === active)!;
-  const shown = modes.filter((m) => cat === "الكل" || m.category === cat);
+  const shown = modes.filter((m) => cat === "All" || m.category === cat);
 
   return (
-    <div className="flex h-full flex-col" dir="rtl">
+    <div className="flex h-full flex-col" dir="ltr">
       <div className="flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),14px)] pb-2">
-        <button onClick={() => { reset(); setPhoto(null); }} className="glass rounded-full px-4 py-2 text-sm">إلغاء</button>
+        <button onClick={() => { reset(); setPhoto(null); }} className="glass rounded-full px-4 py-2 text-sm">Cancel</button>
         <button onClick={onPaywall} className="glass flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs">
-          {isPro() ? <><Crown className="size-3.5 text-primary" /> Pro</> : <>متبقي اليوم {left}/{DAILY_TRIALS}</>}
+          {isPro() ? <><Crown className="size-3.5 text-primary" /> Pro</> : <>Today {left}/{DAILY_TRIALS}</>}
         </button>
-        <button onClick={saveManual} className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">تم</button>
+        <button onClick={saveManual} className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Done</button>
       </div>
 
       <div className="relative grid flex-1 place-items-center overflow-hidden p-4">
@@ -492,7 +494,7 @@ function Studio({ photos, photo, setPhoto, modes, onBack, onPaywall, runAI, onSa
         {tab === "crop" && (
           <div className="space-y-3 pt-2">
             <div className="flex justify-center gap-3">
-              {([[RotateCw, "تدوير", () => setRotate((r) => r + 90)], [FlipHorizontal, "عكس أفقي", () => setFlip((f) => ({ ...f, x: !f.x }))], [FlipVertical, "عكس رأسي", () => setFlip((f) => ({ ...f, y: !f.y }))], [X, "إعادة", reset]] as const).map(([I, l, fn]) => (
+              {([[RotateCw, "Rotate", () => setRotate((r) => r + 90)], [FlipHorizontal, "Flip H", () => setFlip((f) => ({ ...f, x: !f.x }))], [FlipVertical, "Flip V", () => setFlip((f) => ({ ...f, y: !f.y }))], [X, "Reset", reset]] as const).map(([I, l, fn]) => (
                 <button key={l} onClick={fn} className="flex flex-col items-center gap-1 text-[10px] text-muted-foreground"><span className="glass grid size-11 place-items-center rounded-full"><I className="size-5 text-foreground" /></span>{l}</button>
               ))}
             </div>
@@ -504,7 +506,7 @@ function Studio({ photos, photo, setPhoto, modes, onBack, onPaywall, runAI, onSa
       </div>
 
       <div className="glass-strong mx-auto mb-[max(env(safe-area-inset-bottom),18px)] flex gap-1 rounded-full p-1.5">
-        {([["ai", "ذكاء", Sparkles], ["filters", "فلاتر", Palette], ["adjust", "ضبط", SlidersHorizontal], ["crop", "قص", Crop]] as const).map(([k, l, I]) => (
+        {([["ai", "AI", Sparkles], ["filters", "Filters", Palette], ["adjust", "Adjust", SlidersHorizontal], ["crop", "Crop", Crop]] as const).map(([k, l, I]) => (
           <button key={k} onClick={() => setTab(k)} className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm transition-all duration-300 ease-ios ${tab === k ? "bg-glass-strong text-primary" : "text-muted-foreground"}`}><I className="size-4" />{l}</button>
         ))}
       </div>
@@ -519,17 +521,17 @@ function AdModal({ onDone, onCancel }: { onDone: () => void; onCancel: () => voi
   const [t, setT] = useState(5);
   useEffect(() => { if (t <= 0) return; const id = setTimeout(() => setT(t - 1), 1000); return () => clearTimeout(id); }, [t]);
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-scrim p-6 backdrop-blur-xl" dir="rtl">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-scrim p-6 backdrop-blur-xl" dir="ltr">
       <div className="glass-strong pop-in w-full max-w-sm rounded-[2rem] p-6 text-center">
-        <p className="text-xs text-muted-foreground">إعلان</p>
+        <p className="text-xs text-muted-foreground">Ad</p>
         <div className="my-5 grid aspect-video place-items-center rounded-2xl bg-muted"><span className="text-4xl">📺</span></div>
-        <p className="text-sm">شاهد الإعلان لفتح تجربة مجانية</p>
+        <p className="text-sm">Watch an ad to unlock a free try</p>
         {t > 0 ? (
           <div className="mt-5 flex items-center justify-between">
-            <button onClick={onCancel} className="text-sm text-muted-foreground">إلغاء</button>
-            <span className="glass rounded-full px-4 py-2 text-sm tabular-nums">{t} ث</span>
+            <button onClick={onCancel} className="text-sm text-muted-foreground">Cancel</button>
+            <span className="glass rounded-full px-4 py-2 text-sm tabular-nums">{t} s</span>
           </div>
-        ) : <button onClick={onDone} className="mt-5 w-full rounded-full bg-primary py-3 font-semibold text-primary-foreground">متابعة</button>}
+        ) : <button onClick={onDone} className="mt-5 w-full rounded-full bg-primary py-3 font-semibold text-primary-foreground">Continue</button>}
       </div>
     </div>
   );

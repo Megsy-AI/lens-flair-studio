@@ -5,7 +5,7 @@ const MODEL = "openai/gpt-image-2.5-flare";
 
 async function callFastRouter(key: string, image: string, prompt: string) {
   const m = image.match(/^data:(image\/\w+);base64,(.+)$/);
-  if (!m) throw new Error("صورة غير صالحة");
+  if (!m) throw new Error("Invalid image");
   const bytes = Uint8Array.from(atob(m[2]!), (c) => c.charCodeAt(0));
   const form = new FormData();
   form.append("model", MODEL);
@@ -43,7 +43,7 @@ export const aiEditImage = createServerFn({ method: "POST" })
     const envKey = process.env["FASTROUTER_API_KEY"];
     const tries: { id?: string; key: string }[] = pool.map((k) => ({ id: k.id, key: k.key }));
     if (envKey) tries.push({ key: envKey });
-    if (!tries.length) throw new Error("لا يوجد مفتاح متاح حالياً");
+    if (!tries.length) throw new Error("AI service unavailable");
 
     let lastErr = "";
     for (const t of tries) {
@@ -63,7 +63,7 @@ export const aiEditImage = createServerFn({ method: "POST" })
       }
       if (r.status === 400) break; // bad request — other keys won't help
     }
-    throw new Error(`فشل المعالجة (${lastErr})`);
+    throw new Error(`Processing failed (${lastErr})`);
   });
 
 export const getPublicConfig = createServerFn({ method: "GET" }).handler(async () => {

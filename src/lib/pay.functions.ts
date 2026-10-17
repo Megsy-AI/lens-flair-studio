@@ -14,13 +14,13 @@ export const createCheckout = createServerFn({ method: "POST" })
     const key = provider === 'dodo' ? process.env['DODO_API_KEY'] : process.env['KASHIER_API_KEY'];
     const secret = process.env['KASHIER_API_SECRET'];
     const merchantId = process.env['KASHIER_MERCHANT_ID'];
-    if (!key || (provider === 'kashier' && (!secret || !merchantId))) return { error: 'وسيلة الدفع غير متاحة حالياً' };
+    if (!key || (provider === 'kashier' && (!secret || !merchantId))) return { error: 'Payment method unavailable' };
     const db = await paymentDb();
     const hash = deviceHash(data.device);
     const { count } = await db.from('lumen_payment_orders').select('id', { count: 'exact', head: true }).eq('device_hash', hash).gte('created_at', new Date(Date.now() - 3600000).toISOString());
-    if ((count ?? 0) >= 10) return { error: 'طلبات كثيرة؛ جرّب بعد شوية' };
+    if ((count ?? 0) >= 10) return { error: 'Too many attempts, try later' };
     const { data: order, error } = await db.from('lumen_payment_orders').insert({ device_hash: hash, provider, amount: MONTHLY_USD_CENTS, currency: 'USD' }).select('id').single();
-    if (error || !order) return { error: 'تعذر تجهيز طلب الدفع' };
+    if (error || !order) return { error: 'Couldn't prepare order' };
     const requestUrl = new URL(getRequest().url);
     const origin = ['localhost', '127.0.0.1'].includes(requestUrl.hostname) ? 'https://project--9f772b0e-384e-4a61-8632-e3a02cf0ee21-dev.lovable.app' : requestUrl.origin;
     try {
@@ -35,15 +35,15 @@ export const createCheckout = createServerFn({ method: "POST" })
           allowedMethods: data.method === 'vodafone' ? 'wallet' : 'card', defaultMethod: data.method === 'vodafone' ? 'wallet' : 'card', description: 'Lumen Pro - one month', metaData: { lumen_order: order.id }, customer: { reference: order.id },
         }), signal: AbortSignal.timeout(30000),
       });
-      if (!r.ok) return { error: data.method === 'vodafone' ? 'كاشير لم يقبل الدفع بالمحفظة بالدولار؛ جرّب بطاقة أو وسيلة أخرى' : 'شركة الدفع لم تقبل الطلب؛ راجع تفعيل حساب التاجر' };
+      if (!r.ok) return { error: data.method === 'vodafone' ? 'Wallet payment declined, try a card' : 'Payment provider declined the request' };
       const c = await r.json() as { sessionUrl?: string; _id?: string; checkout_url?: string; session_id?: string };
       const url = provider === 'dodo' ? c.checkout_url : c.sessionUrl;
       const id = provider === 'dodo' ? c.session_id : c._id;
-      if (!url || !id || !/^https:\/\//.test(url)) return { error: 'لم يتم تجهيز صفحة الدفع' };
+      if (!url || !id || !/^https:\/\//.test(url)) return { error: 'Checkout page not ready' };
       const saved = await db.from('lumen_payment_orders').update({ provider_session: id }).eq('id', order.id);
-      if (saved.error) return { error: 'تعذر حفظ طلب الدفع' };
+      if (saved.error) return { error: 'Couldn't save order' };
       return { url, orderId: order.id, provider };
-    } catch { return { error: 'تعذر الاتصال بشركة الدفع' }; }
+    } catch { return { error: 'Couldn't reach payment provider' }; }
   });
 
 export const verifyDeviceSubscription = createServerFn({ method: 'POST' })
