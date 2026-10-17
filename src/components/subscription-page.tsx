@@ -14,7 +14,7 @@ const methods: { id: PaymentMethod; name: string; symbol: string }[] = [
   { id: 'vodafone', name: 'Vodafone Cash', symbol: 'vodafone' },
   { id: 'apple', name: 'Apple Pay', symbol: 'apple' },
   { id: 'google', name: 'Google Pay', symbol: 'G Pay' },
-  { id: 'other', name: 'طرق أخرى', symbol: 'other' },
+  { id: 'other', name: 'Other methods', symbol: 'other' },
 ];
 function MethodIcon({ method }: { method: (typeof methods)[number] }) {
   if (method.id === 'mastercard') return <span className="mastercard-mark flex w-9" aria-hidden><i /><i /></span>;
@@ -46,7 +46,7 @@ export function SubscriptionPage({ onClose }: { onClose: () => void }) {
         if (!stopped && result.active) {
           setPro(result.expiresAt);
           localStorage.removeItem('lumen_pending_order');
-          toast.success('اشتراكك اتفعّل');
+          toast.success('Subscription active');
           closeRef.current();
         }
       } catch { /* Retry; provider may still be processing. */ }
@@ -69,7 +69,7 @@ export function SubscriptionPage({ onClose }: { onClose: () => void }) {
       DodoPayments.Initialize({ mode: 'live', displayType: 'inline', onEvent: () => {} });
       DodoPayments.Checkout.open({ checkoutUrl: payment.url, elementId: 'lumen-dodo-checkout', options: { manualRedirect: true } });
       cleanup = () => DodoPayments.Checkout.close();
-    }).catch(() => setError('تعذر فتح الدفع؛ اقفل وجرب تاني'));
+    }).catch(() => setError('Couldn't open checkout, try again'));
     return () => { stopped = true; cleanup?.(); };
   }, [payment]);
 
@@ -80,8 +80,8 @@ export function SubscriptionPage({ onClose }: { onClose: () => void }) {
       if ('url' in result && result.url) {
         localStorage.setItem('lumen_pending_order', result.orderId);
         setPayment(result);
-      } else setError(result.error ?? 'تعذر بدء الدفع');
-    } catch { setError('تعذر بدء الدفع؛ جرّب مرة تانية'); }
+      } else setError(result.error ?? 'Couldn't start payment');
+    } catch { setError('Couldn't start payment, try again'); }
     finally { setLoading(false); }
   };
   return (
@@ -93,7 +93,7 @@ export function SubscriptionPage({ onClose }: { onClose: () => void }) {
         <h1 className="text-center text-4xl font-light" dir="ltr">lumen <span className="rounded-md border border-foreground px-2 text-3xl">pro</span></h1>
         <div className="min-h-10 flex-1" />
         <ul className="mb-5 space-y-2 text-sm font-medium">
-          {['تحويلات الذكاء الاصطناعي', 'بدون إعلانات', 'استوديو الصور بالكامل'].map(x => <li key={x} className="flex items-center gap-2"><Check className="size-4" />{x}</li>)}
+          {['AI transformations', 'No ads', 'Full photo studio'].map(x => <li key={x} className="flex items-center gap-2"><Check className="size-4" />{x}</li>)}
         </ul>
         <div className="glass flex items-center justify-between rounded-lg px-4 py-3"><div><h2 className="font-semibold">Monthly</h2><p className="mt-1 text-xs text-muted-foreground">{['apple', 'google', 'other'].includes(method) ? 'Renews monthly · cancel anytime' : 'One month · no auto-renew'}</p></div><span className="text-3xl font-semibold" dir="ltr">$3<span className="ml-1 text-xs">USD</span></span></div>
         <h2 className="mb-2 mt-4 text-xs font-semibold">Payment method</h2>
