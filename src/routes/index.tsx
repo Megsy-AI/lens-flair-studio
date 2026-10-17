@@ -297,8 +297,8 @@ function Gallery({ photos, onBack, onEdit, onDelete }: {
   const [open, setOpen] = useState<Photo | null>(null);
   return (
     <div className="gallery-page relative h-full">
-      <div className="h-full overflow-y-auto pt-[calc(max(env(safe-area-inset-top),14px)+60px)] pb-[max(env(safe-area-inset-bottom),12px)]">
-        <div className="grid grid-cols-3 gap-[2px]">
+      <div className="h-full overflow-y-auto pb-[max(env(safe-area-inset-bottom),40px)]">
+        <div className="grid grid-cols-3 gap-[1.5px]">
           {photos.map((p) => (
             <button key={p.id} disabled={p.pending} aria-label="View photo" onClick={() => setOpen(p)}
               className="gallery-tile relative aspect-square overflow-hidden bg-muted">
@@ -308,9 +308,9 @@ function Gallery({ photos, onBack, onEdit, onDelete }: {
           ))}
         </div>
       </div>
-      <div className="gallery-fade pointer-events-none absolute inset-x-0 top-0 h-28" />
+      <div className="gallery-fade pointer-events-none absolute inset-x-0 top-0 h-36" />
       <button onClick={onBack} aria-label="Back to camera"
-        className="glass absolute left-4 top-[max(env(safe-area-inset-top),14px)] grid size-11 place-items-center rounded-full transition ease-ios active:scale-90">
+        className="gallery-back absolute left-4 top-[max(env(safe-area-inset-top),16px)] grid size-11 place-items-center rounded-full transition ease-ios active:scale-90">
         <ChevronLeft className="size-5" />
       </button>
       {open && <Viewer photo={open} onClose={() => setOpen(null)} onEdit={() => { onEdit(open); setOpen(null); }} onDelete={() => { onDelete(open.id); setOpen(null); }} />}
