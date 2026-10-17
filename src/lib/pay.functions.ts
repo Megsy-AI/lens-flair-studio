@@ -20,7 +20,7 @@ export const createCheckout = createServerFn({ method: "POST" })
     const { count } = await db.from('lumen_payment_orders').select('id', { count: 'exact', head: true }).eq('device_hash', hash).gte('created_at', new Date(Date.now() - 3600000).toISOString());
     if ((count ?? 0) >= 10) return { error: 'Too many attempts, try later' };
     const { data: order, error } = await db.from('lumen_payment_orders').insert({ device_hash: hash, provider, amount: MONTHLY_USD_CENTS, currency: 'USD' }).select('id').single();
-    if (error || !order) return { error: 'Couldn't prepare order' };
+    if (error || !order) return { error: 'Could not prepare order' };
     const requestUrl = new URL(getRequest().url);
     const origin = ['localhost', '127.0.0.1'].includes(requestUrl.hostname) ? 'https://project--9f772b0e-384e-4a61-8632-e3a02cf0ee21-dev.lovable.app' : requestUrl.origin;
     try {
@@ -41,9 +41,9 @@ export const createCheckout = createServerFn({ method: "POST" })
       const id = provider === 'dodo' ? c.session_id : c._id;
       if (!url || !id || !/^https:\/\//.test(url)) return { error: 'Checkout page not ready' };
       const saved = await db.from('lumen_payment_orders').update({ provider_session: id }).eq('id', order.id);
-      if (saved.error) return { error: 'Couldn't save order' };
+      if (saved.error) return { error: 'Could not save order' };
       return { url, orderId: order.id, provider };
-    } catch { return { error: 'Couldn't reach payment provider' }; }
+    } catch { return { error: 'Could not reach payment provider' }; }
   });
 
 export const verifyDeviceSubscription = createServerFn({ method: 'POST' })

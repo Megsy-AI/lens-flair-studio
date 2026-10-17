@@ -69,7 +69,7 @@ export function SubscriptionPage({ onClose }: { onClose: () => void }) {
       DodoPayments.Initialize({ mode: 'live', displayType: 'inline', onEvent: () => {} });
       DodoPayments.Checkout.open({ checkoutUrl: payment.url, elementId: 'lumen-dodo-checkout', options: { manualRedirect: true } });
       cleanup = () => DodoPayments.Checkout.close();
-    }).catch(() => setError('Couldn't open checkout, try again'));
+    }).catch(() => setError('Could not open checkout, try again'));
     return () => { stopped = true; cleanup?.(); };
   }, [payment]);
 
@@ -80,8 +80,8 @@ export function SubscriptionPage({ onClose }: { onClose: () => void }) {
       if ('url' in result && result.url) {
         localStorage.setItem('lumen_pending_order', result.orderId);
         setPayment(result);
-      } else setError(result.error ?? 'Couldn't start payment');
-    } catch { setError('Couldn't start payment, try again'); }
+      } else setError(result.error ?? 'Could not start payment');
+    } catch { setError('Could not start payment, try again'); }
     finally { setLoading(false); }
   };
   return (
