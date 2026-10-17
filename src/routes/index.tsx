@@ -74,6 +74,7 @@ async function render(src: string, e: Partial<Edit> = {}, max = 1280): Promise<s
 type View = "camera" | "gallery" | "studio" | "pro";
 
 function App() {
+  const libRef = useRef<HTMLInputElement>(null);
   const [view, setView] = useState<View>("camera");
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [studioPhoto, setStudioPhoto] = useState<Photo | null>(null);
@@ -112,14 +113,11 @@ function App() {
   return (
     <div className="fixed inset-0 overflow-hidden bg-background text-foreground select-none" dir="ltr">
       <Toaster position="top-center" theme="dark" />
+      <input ref={libRef} type="file" accept="image/*" multiple hidden onChange={async (e) => { await importDeviceFiles(e.target.files); e.target.value = ""; refresh(); }} />
       <div key={view} className="pop-in h-full">
         {view === "camera" && (
           <Camera last={photos[0]} onCapture={(img, m) => runAI(img, CAMERA_PROMPT + m.extra, "Enhanced")}
             onGallery={() => { if (!localStorage.getItem("lumen-library")) libRef.current?.click(); setView("gallery"); }} onPro={() => setView("pro")} />
-        )}
-        <input ref={libRef} type="file" accept="image/*" multiple hidden onChange={async (e) => { await importDeviceFiles(e.target.files); e.target.value = ""; refresh(); }} />
-        {false && (
-          <span />
         )}
         {view === "gallery" && (
           <Gallery photos={photos} onBack={() => setView("camera")} onImported={refresh}

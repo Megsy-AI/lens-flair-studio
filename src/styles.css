@@ -252,3 +252,14 @@ html, body { background: var(--background); color: var(--foreground); font-famil
 .mode-chip-active { color: var(--primary); background: oklch(0.1 0 0 / .78); backdrop-filter: blur(20px); box-shadow: inset 0 1px 0 oklch(1 0 0 / .14), inset 0 0 0 1px oklch(1 0 0 / .08), 0 4px 14px oklch(0 0 0 / .4); }
 .cam-shutter { width: 84px; height: 84px; background: oklch(0.12 0 0 / .9); box-shadow: inset 0 0 0 2px oklch(1 0 0 / .22); }
 .cam-shutter span { width: 70px; height: 70px; }
+
+/* iOS camera v3 */
+.cam-glass-btn { width: 40px; height: 40px; border-radius: 999px; display: grid; place-items: center; color: var(--foreground); background: oklch(0.2 0 0 / .45); backdrop-filter: blur(24px) saturate(180%); box-shadow: inset 0 1px 0 oklch(1 0 0 / .22), inset 0 0 0 .5px oklch(1 0 0 / .14); transition: transform 300ms var(--spring), color 300ms; }
+.cam-glass-btn:active { transform: scale(.88); }
+.cam-glass-on { color: var(--primary); }
+.cam-pro { position: static; height: 32px; padding: 0 14px; border-radius: 999px; font-size: 13px; font-weight: 700; letter-spacing: .06em; color: var(--primary); background: oklch(0.2 0 0 / .45); backdrop-filter: blur(24px) saturate(180%); box-shadow: inset 0 1px 0 oklch(1 0 0 / .22), inset 0 0 0 .5px oklch(1 0 0 / .14); }
+.zoom-btn { width: 40px; height: 40px; border-radius: 999px; display: grid; place-items: center; font-size: 14px; font-weight: 600; color: var(--foreground); text-shadow: 0 1px 2px oklch(0 0 0 / .5); transition: all 400ms var(--spring); }
+.zoom-on { width: 46px; height: 46px; color: var(--primary); background: oklch(0.55 0 0 / .35); backdrop-filter: blur(16px) saturate(180%); box-shadow: inset 0 1px 1px oklch(1 0 0 / .45), inset 0 -1px 2px oklch(0 0 0 / .3), 0 4px 12px oklch(0 0 0 / .35); }
+.mode-pill { flex: none; width: 210px; height: 54px; border-radius: 999px; background: oklch(0.16 0 0 / .55); box-shadow: inset 0 0 0 .5px oklch(1 0 0 / .08); mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+.mode-chip { height: 48px; padding: 0 22px; }
+.cam-flip svg { transition: transform 500ms var(--spring); }
