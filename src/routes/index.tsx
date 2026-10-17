@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Toaster, toast } from "sonner";
 import {
   RefreshCw, Zap, ZapOff, Sparkles, Wand2, Crop, SlidersHorizontal, Trash2, Download, Crown, Check, ChevronLeft, Images,
-  Share2, Pencil, Plus, X, RotateCw, FlipHorizontal, FlipVertical, Palette, Loader2, Eraser, Scissors,
+  Share2, Pencil, Plus, X, RotateCw, FlipHorizontal, FlipVertical, Palette, Loader2, Eraser, Scissors, ArrowUp, Sun, Sparkle, Contrast, Droplet, Thermometer, CloudFog, Moon, Aperture, Circle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { aiEditImage, getPublicConfig } from "@/lib/ai.functions";
@@ -125,7 +125,7 @@ function App() {
             onDelete={async (id) => { await deletePhoto(id); refresh(); }} />
         )}
         {view === "studio" && (
-          <Studio photos={photos} photo={studioPhoto} setPhoto={setStudioPhoto} modes={modes} onBack={() => setView("camera")}
+          <Studio photos={photos} photo={studioPhoto} setPhoto={setStudioPhoto} modes={modes} onBack={() => setView("gallery")}
             onPaywall={() => setView("pro")} runAI={runAI} onSaved={refresh} />
         )}
         {view === "pro" && <SubscriptionPage onClose={() => setView("camera")} />}
@@ -218,11 +218,15 @@ function Camera({ last, onCapture, onGallery, onPro }: {
   };
 
   const railRef = useRef<HTMLDivElement>(null);
+  const [modesOpen, setModesOpen] = useState(false);
+  const closeT = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const armClose = () => { if (closeT.current) clearTimeout(closeT.current); closeT.current = setTimeout(() => setModesOpen(false), 1600); };
   const scrollToMode = (i: number, smooth = true) => {
     const rail = railRef.current; const el = rail?.children[i] as HTMLElement | undefined;
     if (rail && el) rail.scrollTo({ left: el.offsetLeft - rail.clientWidth / 2 + el.clientWidth / 2, behavior: smooth ? "smooth" : "auto" });
   };
   useEffect(() => { scrollToMode(modeIdx, false); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (modesOpen) { requestAnimationFrame(() => scrollToMode(modeIdx, false)); armClose(); } }, [modesOpen]); // eslint-disable-line react-hooks/exhaustive-deps
   const onRail = () => {
     const rail = railRef.current; if (!rail) return;
     const c = rail.scrollLeft + rail.clientWidth / 2;
@@ -282,16 +286,27 @@ function Camera({ last, onCapture, onGallery, onPro }: {
             {last ? <img src={last.src} className="h-full w-full object-cover" alt="" /> : null}
             {last?.pending && <div className="shimmer absolute inset-0" />}
           </button>
-          <div className="mode-pill">
-            <span className="mode-center" aria-hidden />
-            <div ref={railRef} onScroll={onRail} className="mode-rail" role="tablist" aria-label="Camera modes">
-              {MODES.map((m, i) => (
-                <button key={m.id} role="tab" aria-selected={i === modeIdx} onClick={() => scrollToMode(i)}
-                  className={`mode-chip ${i === modeIdx ? "mode-chip-active" : ""}`}>
-                  {m.label}
-                </button>
-              ))}
-            </div>
+          <div className={`mode-pill ${modesOpen ? "mode-pill-open" : "mode-pill-closed"}`}>
+            {modesOpen ? (
+              <>
+                <span className="mode-center" aria-hidden />
+                <div ref={railRef} onScroll={() => { onRail(); armClose(); }} className="mode-rail" role="tablist" aria-label="Camera modes">
+                  {MODES.map((m, i) => (
+                    <button key={m.id} role="tab" aria-selected={i === modeIdx} onClick={() => { scrollToMode(i); armClose(); }}
+                      className={`mode-chip ${i === modeIdx ? "mode-chip-active" : ""}`}>
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="mode-pair" role="tablist" aria-label="Camera modes">
+                {(modeIdx < MODES.length - 1 ? [modeIdx, modeIdx + 1] : [modeIdx - 1, modeIdx]).map((i) => (
+                  <button key={MODES[i]!.id} role="tab" aria-selected={i === modeIdx} onClick={() => setModesOpen(true)}
+                    className={`mode-pair-chip ${i === modeIdx ? "mode-pair-on" : ""}`}>{MODES[i]!.label}</button>
+                ))}
+              </div>
+            )}
           </div>
           <button onClick={() => { setSpin((x) => x + 180); setFacing((v) => (v === "user" ? "environment" : "user")); }} className="cam-flip" aria-label="Switch camera">
             <svg viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" style={{ transform: `rotate(${spin}deg)` }}>
@@ -407,12 +422,22 @@ function Thumb({ m, src }: { m: AIMode; src: string }) {
   return <img src={src} className="h-full w-full object-cover saturate-150" alt="" />;
 }
 
-function Studio({ photos, photo, setPhoto, modes, onBack, onPaywall, runAI, onSaved }: {
+function AgentMark({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 554 552" className={className} fill="currentColor" aria-hidden>
+      <polygon points="180,0 554,0 554,343 346,552 346,183 0,183" />
+    </svg>
+  );
+}
+
+type Msg = { id: string; role: "user" | "agent"; text: string };
+const ADJ_ICONS: Record<string, typeof Sun> = { exposure: Sun, brightness: Sparkle, contrast: Contrast, saturate: Droplet, warmth: Thermometer, tint: Palette, fade: CloudFog, mono: Moon, blur: Aperture, vignette: Circle };
+
+function Studio({ photo, setPhoto, modes, onBack, onPaywall, runAI, onSaved }: {
   photos: Photo[]; photo: Photo | null; setPhoto: (p: Photo | null) => void; modes: AIMode[]; onBack: () => void; onPaywall: () => void;
   runAI: (src: string, prompt: string, label: string, original?: string) => Promise<Photo | null>; onSaved: () => void;
 }) {
-  const [tab, setTab] = useState<"ai" | "filters" | "adjust" | "crop" | "tools">("adjust");
-  const [cat, setCat] = useState("All");
+  const [tab, setTab] = useState<"agent" | "adjust" | "filters" | "crop" | "tools">("agent");
   const [crop, setCrop] = useState(0);
   const [rotate, setRotate] = useState(0);
   const [flip, setFlip] = useState({ x: false, y: false });
@@ -420,46 +445,30 @@ function Studio({ photos, photo, setPhoto, modes, onBack, onPaywall, runAI, onSa
   const [active, setActive] = useState<(typeof ADJ)[number]["k"]>("exposure");
   const [busy, setBusy] = useState(false);
   const [ad, setAd] = useState<null | (() => void)>(null);
-  const [left, setLeft] = useState(DAILY_TRIALS);
-  const fileRef = useRef<HTMLInputElement>(null);
-  useEffect(() => setLeft(trialsLeft()), [ad]);
-  const cats = ["All", ...CATEGORIES.filter((c) => modes.some((m) => m.category === c)), ...[...new Set(modes.map((m) => m.category))].filter((c) => !CATEGORIES.includes(c))];
+  const [msgs, setMsgs] = useState<Msg[]>([]);
+  const [input, setInput] = useState("");
+  const [thinking, setThinking] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { listRef.current?.scrollTo({ top: 1e6, behavior: "smooth" }); }, [msgs, thinking]);
 
-  if (!photo) {
-    return (
-      <div className="h-full overflow-y-auto pb-20" dir="ltr">
-        <div className="glass sticky top-0 z-30 flex items-center justify-between border-x-0 border-t-0 px-4 pt-[max(env(safe-area-inset-top),14px)] pb-3">
-          <button onClick={onBack} className="glass grid size-10 place-items-center rounded-full"><ChevronLeft className="size-5 " /></button>
-          <h1 className="text-[17px] font-semibold">Select Photo</h1>
-          <button onClick={() => fileRef.current?.click()} className="text-sm text-primary">Import</button>
-        </div>
-        <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => {
-          const f = e.target.files?.[0]; if (!f) return;
-          const r = new FileReader();
-          r.onload = async () => setPhoto({ id: uid(), src: await render(r.result as string), createdAt: Date.now() });
-          r.readAsDataURL(f);
-        }} />
-        {photos.length === 0 && <p className="mt-32 text-center text-muted-foreground">No photos — import one</p>}
-        <div className="grid grid-cols-3 gap-[3px] p-[3px]">
-          {photos.filter((p) => !p.pending).map((p) => (
-            <button key={p.id} onClick={() => setPhoto(p)} className="aspect-square overflow-hidden rounded-[6px]"><img src={p.src} className="h-full w-full object-cover" alt="" /></button>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  if (!photo) return null;
 
   const reset = () => { setCrop(0); setRotate(0); setFlip({ x: false, y: false }); setAdj(ADJ0); };
-  const applyEffect = (m: AIMode) => {
-    const go = async () => { setBusy(true); const res = await runAI(photo.src, m.prompt, m.name, photo.src); setBusy(false); if (res) setPhoto(res); };
+  const exit = () => { reset(); setPhoto(null); onBack(); };
+  const gate = (go: () => void) => {
     if (isPro()) return go();
     if (trialsLeft() <= 0) return onPaywall();
     setAd(() => () => { consumeTrial(); go(); });
   };
-  const saveManual = async () => {
+  const aiRun = async (prompt: string, label: string) => {
+    setBusy(true); const res = await runAI(photo.src, prompt, label, photo.src); setBusy(false);
+    if (res) setPhoto(res);
+    return !!res;
+  };
+  const save = async () => {
     const out = await render(photo.src, { crop, rotate, flipX: flip.x, flipY: flip.y, filter: cssOf(adj), vignette: adj.vignette }, 2048);
-    const p: Photo = { id: uid(), src: out, original: photo.src, createdAt: Date.now(), label: "Edited" };
-    await savePhoto(p); onSaved(); setPhoto(p); reset();
+    await savePhoto({ id: uid(), src: out, original: photo.src, createdAt: Date.now(), label: "Edited" });
+    onSaved(); exit();
   };
   const removeBg = async () => {
     setBusy(true);
@@ -469,102 +478,138 @@ function Studio({ photos, photo, setPhoto, modes, onBack, onPaywall, runAI, onSa
       const src = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(blob); });
       const p: Photo = { id: uid(), src, original: photo.src, createdAt: Date.now(), label: "No Background" };
       await savePhoto(p); onSaved(); setPhoto(p);
-    } catch { toast.error("Couldn't remove the background"); }
-    setBusy(false);
+      setBusy(false); return true;
+    } catch { toast.error("Couldn't remove the background"); setBusy(false); return false; }
   };
-  const aiTool = (prompt: string, label: string) => applyEffect({ id: label, name: label, prompt, category: "Tools" } as AIMode);
+
+  // Local agent: maps plain-English requests to edits; anything else goes to the image AI.
+  const agent = async (text: string): Promise<string> => {
+    const t = text.toLowerCase();
+    const bump = (k: keyof Adj, d: number) => setAdj((a) => { const def = ADJ.find((x) => x.k === k)!; return { ...a, [k]: Math.max(def.min, Math.min(def.max, a[k] + d)) }; });
+    const done: string[] = [];
+    if (/reset|undo all|original/.test(t)) { reset(); return "Reset all edits. You're back to the original."; }
+    if (/bright|lighter|lift/.test(t)) { bump("exposure", 15); done.push("raised the exposure"); }
+    if (/dark|dim/.test(t)) { bump("exposure", -15); done.push("lowered the exposure"); }
+    if (/contrast|punch/.test(t)) { bump("contrast", 20); done.push("added contrast"); }
+    if (/vivid|saturat|colorful|pop/.test(t)) { bump("saturate", 30); done.push("boosted the colors"); }
+    if (/warm|golden|sunset/.test(t)) { bump("warmth", 20); done.push("warmed the tones"); }
+    if (/cool|cold|blue/.test(t)) { bump("warmth", -20); done.push("cooled the tones"); }
+    if (/black and white|b&w|mono|gray/.test(t)) { setAdj((a) => ({ ...a, mono: 100 })); done.push("made it black and white"); }
+    if (/vignette/.test(t)) { bump("vignette", 30); done.push("added a vignette"); }
+    if (/rotate/.test(t)) { setRotate((r) => r + 90); done.push("rotated it 90°"); }
+    if (/square/.test(t)) { setCrop(1); done.push("cropped to square"); }
+    if (/flip|mirror/.test(t)) { setFlip((f) => ({ ...f, x: !f.x })); done.push("flipped it"); }
+    if (done.length) { await new Promise((r) => setTimeout(r, 900)); return `Done — I ${done.join(", ")}. Tap Done to save.`; }
+    if (/background/.test(t) && /remove|erase|delete/.test(t)) return (await removeBg()) ? "Removed the background." : "I couldn't remove the background this time.";
+    return new Promise((resolve) => gate(async () => resolve((await aiRun(text, "Agent")) ? "Here's your edited photo." : "The AI service isn't available right now."))) as Promise<string>;
+  };
+  const send = async (raw?: string) => {
+    const text = (raw ?? input).trim(); if (!text || thinking) return;
+    setInput(""); setMsgs((m) => [...m, { id: uid(), role: "user", text }]); setThinking(true);
+    const reply = await agent(text).catch(() => "Something went wrong.");
+    setThinking(false); setMsgs((m) => [...m, { id: uid(), role: "agent", text: reply }]);
+  };
   const cur = ADJ.find((a) => a.k === active)!;
-  const shown = modes.filter((m) => cat === "All" || m.category === cat);
+  const SUGGEST = ["Make it brighter", "Warm sunset look", "Remove the background", "Black and white", ...modes.slice(0, 2).map((m) => m.name)];
 
   return (
-    <div className="flex h-full flex-col" dir="ltr">
+    <div className="studio flex h-full flex-col" dir="ltr">
       <div className="flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),14px)] pb-2">
-        <button onClick={() => { reset(); setPhoto(null); }} className="glass rounded-full px-4 py-2 text-sm">Cancel</button>
-        <button onClick={onPaywall} className="glass flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs">
-          {isPro() ? <><Crown className="size-3.5 text-primary" /> Pro</> : <>Today {left}/{DAILY_TRIALS}</>}
-        </button>
-        <button onClick={saveManual} className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Done</button>
+        <button onClick={exit} className="studio-chip">Cancel</button>
+        <button onClick={save} className="studio-done">Done</button>
       </div>
 
-      <div className="relative grid flex-1 place-items-center overflow-hidden p-4">
-        <div className="relative max-h-full max-w-full overflow-hidden rounded-2xl transition-all duration-500 ease-ios"
+      <div className={`relative grid min-h-0 place-items-center overflow-hidden px-4 transition-all duration-500 ease-ios ${tab === "agent" ? "flex-[0.9]" : "flex-1"}`}>
+        <div className="relative max-h-full max-w-full overflow-hidden rounded-[14px] transition-all duration-500 ease-ios"
           style={{ ...(crop ? { aspectRatio: String(crop), height: crop < 1 ? "100%" : undefined, width: crop >= 1 ? "100%" : undefined } : {}), transform: `rotate(${rotate}deg) scale(${flip.x ? -1 : 1}, ${flip.y ? -1 : 1})` }}>
-          <img src={photo.src} style={{ filter: cssOf(adj) }} className={`h-full w-full ${crop ? "object-cover" : "max-h-[55vh] object-contain"} ${busy ? "scale-105 blur-md" : ""} transition`} alt="" />
+          <img src={photo.src} style={{ filter: cssOf(adj) }} className={`h-full w-full ${crop ? "object-cover" : "max-h-[52vh] object-contain"} transition duration-500 ${busy ? "scale-105 blur-md" : ""}`} alt="" />
           {adj.vignette > 0 && <div className="pointer-events-none absolute inset-0" style={{ boxShadow: `inset 0 0 ${adj.vignette * 2}px ${adj.vignette}px oklch(0 0 0 / ${adj.vignette / 100})` }} />}
           {busy && <div className="shimmer absolute inset-0" />}
         </div>
       </div>
 
-      <div key={tab} className="pop-in min-h-[170px] px-3">
-        {tab === "ai" && (
+      <div key={tab} className={`pop-in px-4 ${tab === "agent" ? "flex min-h-0 flex-1 flex-col" : "min-h-[150px]"}`}>
+        {tab === "agent" && (
           <>
-            <div className="mb-2 flex gap-1.5 overflow-x-auto [scrollbar-width:none]">
-              {cats.map((c) => <button key={c} onClick={() => setCat(c)} className={`shrink-0 rounded-full px-3 py-1 text-xs transition ease-ios ${cat === c ? "bg-foreground text-background" : "glass text-muted-foreground"}`}>{c}</button>)}
-            </div>
-            <div className="flex gap-2.5 overflow-x-auto pb-2 [scrollbar-width:none]">
-              {shown.map((m) => (
-                <button key={m.id} disabled={busy} onClick={() => applyEffect(m)} className="flex shrink-0 flex-col items-center gap-1.5 disabled:opacity-40">
-                  <span className="glass block size-[76px] overflow-hidden rounded-2xl p-0 transition ease-ios active:scale-90"><Thumb m={m} src={photo.src} /></span>
-                  <span className="w-[76px] truncate text-center text-[11px] text-muted-foreground">{m.name}</span>
-                </button>
+            <div ref={listRef} className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto py-3 [scrollbar-width:none]">
+              {msgs.length === 0 && !thinking && (
+                <div className="m-auto flex flex-col items-center gap-3 text-center">
+                  <AgentMark className="size-7 text-foreground" />
+                  <p className="text-[15px] font-semibold">AI Agent</p>
+                  <p className="max-w-[240px] text-[13px] text-muted-foreground">Tell me how you want this photo to look.</p>
+                </div>
+              )}
+              {msgs.map((m) => (
+                <div key={m.id} className={`pop-in max-w-[82%] text-[14.5px] leading-snug ${m.role === "user" ? "agent-user self-end" : "self-start text-foreground"}`}>{m.text}</div>
               ))}
+              {thinking && (
+                <div className="flex items-center gap-2 self-start">
+                  <AgentMark className="agent-spin size-4 text-foreground" />
+                  <span className="agent-thinking text-[14.5px] font-medium">Thinking</span>
+                </div>
+              )}
             </div>
+            {msgs.length === 0 && (
+              <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2.5 [scrollbar-width:none]">
+                {SUGGEST.map((s) => <button key={s} onClick={() => send(s)} className="studio-chip shrink-0 text-[13px]">{s}</button>)}
+              </div>
+            )}
+            <form onSubmit={(e) => { e.preventDefault(); send(); }} className="agent-input mb-3 flex items-center gap-2 rounded-full py-1.5 pl-4 pr-1.5">
+              <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask the agent to edit…" className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground" />
+              <button disabled={!input.trim() || thinking} className="grid size-8 place-items-center rounded-full bg-foreground text-background transition disabled:opacity-30" aria-label="Send"><ArrowUp className="size-4" strokeWidth={2.5} /></button>
+            </form>
           </>
         )}
-        {tab === "filters" && (
-          <div className="flex gap-2.5 overflow-x-auto pb-2 pt-2 [scrollbar-width:none]">
-            {PRESETS.map((p) => {
-              const a = { ...ADJ0, ...p.a };
-              const on = JSON.stringify(a) === JSON.stringify(adj);
-              return (
-                <button key={p.l} onClick={() => setAdj(a)} className="flex shrink-0 flex-col items-center gap-1.5">
-                  <span className={`block size-[72px] overflow-hidden rounded-2xl border-2 transition ease-ios ${on ? "border-primary" : "border-transparent"}`}><img src={photo.src} style={{ filter: cssOf(a) }} className="h-full w-full object-cover" alt="" /></span>
-                  <span className={`text-[11px] ${on ? "text-primary" : "text-muted-foreground"}`}>{p.l}</span>
-                </button>
-              );
-            })}
+        {tab === "adjust" && (
+          <div className="pt-3">
+            <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-3 [scrollbar-width:none]">
+              {ADJ.map((a) => { const I = ADJ_ICONS[a.k] ?? Circle; const on = active === a.k; const changed = adj[a.k] !== a.d; return (
+                <button key={a.k} onClick={() => setActive(a.k)} aria-label={a.l} className={`adj-dial ${on ? "adj-dial-on" : ""} ${changed ? "adj-dial-changed" : ""}`}><I className="size-5" strokeWidth={1.7} /></button>
+              ); })}
+            </div>
+            <div className="mb-1 flex items-baseline justify-center gap-2 text-[12px]"><span className="font-semibold tracking-wide uppercase">{cur.l}</span><span className="tabular-nums text-muted-foreground">{adj[cur.k] - cur.d}</span></div>
+            <input type="range" min={cur.min} max={cur.max} value={adj[cur.k]} onChange={(e) => setAdj({ ...adj, [cur.k]: +e.target.value })} onDoubleClick={() => setAdj({ ...adj, [cur.k]: cur.d })} className="tick-range w-full" />
           </div>
         )}
-        {tab === "adjust" && (
-          <div className="pt-1">
-            <div className="flex gap-2 overflow-x-auto pb-3 [scrollbar-width:none]">
-              {ADJ.map((a) => (
-                <button key={a.k} onClick={() => setActive(a.k)} className="flex shrink-0 flex-col items-center gap-1">
-                  <span className={`grid size-12 place-items-center rounded-full border text-[11px] tabular-nums transition ease-ios ${active === a.k ? "border-primary text-primary" : "border-glass-border text-muted-foreground"}`}>{adj[a.k] - a.d}</span>
-                  <span className="text-[10px] text-muted-foreground">{a.l}</span>
-                </button>
-              ))}
-            </div>
-            <input type="range" min={cur.min} max={cur.max} value={adj[cur.k]} onChange={(e) => setAdj({ ...adj, [cur.k]: +e.target.value })} onDoubleClick={() => setAdj({ ...adj, [cur.k]: cur.d })} className="w-full accent-primary" />
+        {tab === "filters" && (
+          <div className="-mx-4 flex gap-2.5 overflow-x-auto px-4 pt-4 pb-2 [scrollbar-width:none]">
+            {PRESETS.map((p) => { const a = { ...ADJ0, ...p.a }; const on = JSON.stringify(a) === JSON.stringify(adj); return (
+              <button key={p.l} onClick={() => setAdj(a)} className="flex shrink-0 flex-col items-center gap-1.5">
+                <span className={`block size-[64px] overflow-hidden rounded-[12px] ring-2 transition ease-ios ${on ? "ring-primary" : "ring-transparent"}`}><img src={photo.src} style={{ filter: cssOf(a) }} className="h-full w-full object-cover" alt="" /></span>
+                <span className={`text-[11px] ${on ? "text-foreground" : "text-muted-foreground"}`}>{p.l}</span>
+              </button>
+            ); })}
           </div>
         )}
         {tab === "crop" && (
-          <div className="space-y-3 pt-2">
-            <div className="flex justify-center gap-3">
-              {([[RotateCw, "Rotate", () => setRotate((r) => r + 90)], [FlipHorizontal, "Flip H", () => setFlip((f) => ({ ...f, x: !f.x }))], [FlipVertical, "Flip V", () => setFlip((f) => ({ ...f, y: !f.y }))], [X, "Reset", reset]] as const).map(([I, l, fn]) => (
-                <button key={l} onClick={fn} className="flex flex-col items-center gap-1 text-[10px] text-muted-foreground"><span className="glass grid size-11 place-items-center rounded-full"><I className="size-5 text-foreground" /></span>{l}</button>
+          <div className="space-y-4 pt-4">
+            <div className="flex justify-center gap-5">
+              {([[RotateCw, "Rotate", () => setRotate((r) => r + 90)], [FlipHorizontal, "Flip", () => setFlip((f) => ({ ...f, x: !f.x }))], [FlipVertical, "Flip V", () => setFlip((f) => ({ ...f, y: !f.y }))], [X, "Reset", reset]] as const).map(([I, l, fn]) => (
+                <button key={l} onClick={fn} aria-label={l} className="adj-dial"><I className="size-5" strokeWidth={1.7} /></button>
               ))}
             </div>
-            <div className="flex gap-2 overflow-x-auto [scrollbar-width:none]">
-              {CROPS.map((c) => <button key={c.l} onClick={() => setCrop(c.v)} className={`shrink-0 rounded-full px-4 py-2 text-sm transition ease-ios ${crop === c.v ? "bg-primary text-primary-foreground" : "glass"}`}>{c.l}</button>)}
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]">
+              {CROPS.map((c) => <button key={c.l} onClick={() => setCrop(c.v)} className={`studio-chip shrink-0 ${crop === c.v ? "studio-chip-on" : ""}`}>{c.l}</button>)}
             </div>
           </div>
         )}
         {tab === "tools" && (
-          <div className="flex justify-center gap-6 pt-4">
-            {([[Scissors, "Remove BG", removeBg], [Eraser, "Clean Up", () => aiTool("Remove all people from this photo and fill the area naturally with the surrounding background. Keep everything else unchanged.", "Clean Up")], [Wand2, "Erase Objects", () => aiTool("Remove distracting small objects, clutter and blemishes from this photo, filling naturally. Keep the main subject unchanged.", "Erased")]] as const).map(([I, l, fn]) => (
+          <div className="flex justify-center gap-7 pt-5">
+            {([[Scissors, "Remove BG", () => { removeBg(); }], [Eraser, "Clean Up", () => gate(() => { aiRun("Remove all people from this photo and fill the area naturally with the surrounding background. Keep everything else unchanged.", "Clean Up"); })], [Wand2, "Erase", () => gate(() => { aiRun("Remove distracting small objects and clutter, filling naturally. Keep the main subject unchanged.", "Erased"); })]] as const).map(([I, l, fn]) => (
               <button key={l} disabled={busy} onClick={fn} className="flex flex-col items-center gap-2 disabled:opacity-40">
                 <span className="tool-circle"><I className="size-6" strokeWidth={1.6} /></span>
-                <span className="text-[13px] font-semibold">{l}</span>
+                <span className="text-[12.5px] font-medium">{l}</span>
               </button>
             ))}
           </div>
         )}
       </div>
 
-      <div className="edit-bar mx-auto mb-[max(env(safe-area-inset-bottom),18px)] flex rounded-full px-2 py-1.5">
-        {([["ai", "Styles", Sparkles], ["adjust", "Adjust", SlidersHorizontal], ["filters", "Filters", Palette], ["crop", "Crop", Crop], ["tools", "Tools", Eraser]] as const).map(([k, l, I]) => (
-          <button key={k} onClick={() => setTab(k)} className={`edit-tab ${tab === k ? "edit-tab-on" : ""}`}><I className="size-[22px]" strokeWidth={1.6} /><span>{l}</span></button>
+      <div className="edit-bar mx-auto mb-[max(env(safe-area-inset-bottom),16px)] flex rounded-full px-2 py-1.5">
+        {([["agent", "AI Agent", null], ["adjust", "Adjust", SlidersHorizontal], ["filters", "Filters", Palette], ["crop", "Crop", Crop], ["tools", "Tools", Eraser]] as const).map(([k, l, I]) => (
+          <button key={k} onClick={() => setTab(k)} className={`edit-tab ${tab === k ? "edit-tab-on" : ""}`}>
+            {I ? <I className="size-[21px]" strokeWidth={1.6} /> : <AgentMark className="size-[19px]" />}<span>{l}</span>
+          </button>
         ))}
       </div>
 
