@@ -254,7 +254,15 @@ function Camera({ last, onCapture, onGallery, onPro }: {
       </div>
 
       <div className="cam-bottom absolute inset-x-0 bottom-0 z-20 pb-[max(env(safe-area-inset-bottom),18px)]">
-        <div className="flex items-center justify-center gap-1 pb-4" role="group" aria-label="Zoom">
+        <div className="zoom-row flex items-center justify-center gap-1 pb-4 touch-pan-y" role="group" aria-label="Zoom"
+          onPointerDown={(e) => { (e.currentTarget as HTMLElement).dataset.x = String(e.clientX); }}
+          onPointerUp={(e) => {
+            const x0 = Number((e.currentTarget as HTMLElement).dataset.x); const dx = e.clientX - x0;
+            if (Math.abs(dx) < 24) return;
+            const i = ZOOMS.indexOf(zoom); const n = Math.max(0, Math.min(ZOOMS.length - 1, i + (dx < 0 ? 1 : -1)));
+            setZoom(ZOOMS[n]!);
+          }}>
+
           {ZOOMS.map((z) => {
             const on = zoom === z;
             return (
