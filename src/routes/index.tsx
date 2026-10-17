@@ -289,54 +289,28 @@ function download(p: Photo) {
   const a = document.createElement("a"); a.href = p.src; a.download = `lumen-${p.id}.jpg`; a.click();
   toast.success("تم الحفظ");
 }
-const dayLabel = (t: number) => {
-  const d = new Date(t), n = new Date();
-  if (d.toDateString() === n.toDateString()) return "اليوم";
-  if (new Date(n.getTime() - 864e5).toDateString() === d.toDateString()) return "أمس";
-  return d.toLocaleDateString("ar-EG", { day: "numeric", month: "long" });
-};
-
 function Gallery({ photos, onBack, onEdit, onDelete }: {
   photos: Photo[]; onBack: () => void; onEdit: (p: Photo) => void; onDelete: (id: string) => void;
 }) {
   const [open, setOpen] = useState<Photo | null>(null);
-  const [filter, setFilter] = useState<"all" | "ai" | "edit">("all");
-  const [columns, setColumns] = useState<2 | 3>(3);
-  const list = photos.filter((p) => filter === "all" || (filter === "edit" ? p.label === "معدّلة" : p.label !== "معدّلة" && p.label !== "أصلية"));
-  const groups = useMemo(() => {
-    const g: [string, Photo[]][] = [];
-    for (const p of list) { const l = dayLabel(p.createdAt); const last = g[g.length - 1]; if (last && last[0] === l) last[1].push(p); else g.push([l, [p]]); }
-    return g;
-  }, [list]);
   return (
-    <div className="gallery-page flex h-full flex-col" dir="rtl">
-      <header className="flex shrink-0 items-center justify-between px-5 pb-4 pt-[max(env(safe-area-inset-top),18px)]">
-        <Button variant="ghost" size="icon" onClick={onBack} className="glass size-11 rounded-full" aria-label="العودة للكاميرا"><ChevronLeft className="size-5 rotate-180" /></Button>
-        <span className="text-sm font-medium text-muted-foreground">LUMEN</span>
-        <Button variant="ghost" size="icon" onClick={() => setColumns(columns === 3 ? 2 : 3)} className="glass size-11 rounded-full" aria-label="تغيير حجم الصور"><Images className="size-5" /></Button>
-      </header>
-      <div className="px-6 pb-5">
-        <div className="flex items-end justify-between"><h1 className="text-[36px] font-bold leading-tight">مكتبتك</h1><span className="pb-1 text-sm tabular-nums text-muted-foreground">{photos.length} صورة</span></div>
-        <div className="glass relative mt-5 grid h-11 grid-cols-3 rounded-full p-1">
-          {([["all", "كل الصور"], ["ai", "محسّنة"], ["edit", "معدّلة"]] as const).map(([k, l]) => (
-            <Button variant="ghost" key={k} onClick={() => setFilter(k)} className={`h-9 rounded-full px-2 text-xs transition-all duration-300 ease-ios ${filter === k ? "bg-glass-strong text-foreground" : "text-muted-foreground"}`}>{l}</Button>
+    <div className="gallery-page relative h-full">
+      <div className="h-full overflow-y-auto pt-[calc(max(env(safe-area-inset-top),14px)+60px)] pb-[max(env(safe-area-inset-bottom),12px)]">
+        <div className="grid grid-cols-3 gap-[2px]">
+          {photos.map((p) => (
+            <button key={p.id} disabled={p.pending} aria-label="عرض الصورة" onClick={() => setOpen(p)}
+              className="gallery-tile relative aspect-square overflow-hidden bg-muted">
+              <img src={p.src} className={`h-full w-full object-cover ${p.pending ? "blur-sm" : ""}`} alt="" loading="lazy" />
+              {p.pending && <div className="shimmer absolute inset-0" />}
+            </button>
           ))}
         </div>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(env(safe-area-inset-bottom),24px)]">
-        {list.length === 0 && <div className="flex h-3/5 flex-col items-center justify-center gap-4 text-muted-foreground"><div className="glass grid size-20 place-items-center rounded-full"><Images className="size-8" /></div><p className="text-lg font-medium">{photos.length ? "لا توجد صور هنا" : "لحظاتك تبدأ بصورة"}</p>{!photos.length && <Button variant="ghost" onClick={onBack} className="text-primary">افتح الكاميرا <ChevronLeft className="size-4" /></Button>}</div>}
-        {groups.map(([label, items]) => (
-          <section key={label} className="mb-6">
-            <div className="flex items-center justify-between px-2 pb-3"><h2 className="text-base font-semibold">{label}</h2><span className="text-xs text-muted-foreground">{items.length}</span></div>
-            <div className={`grid gap-2 ${columns === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
-              {items.map((p) => <Button variant="ghost" key={p.id} disabled={p.pending} aria-label={`عرض الصورة ${p.id}`} onClick={() => setOpen(p)} className="relative h-auto aspect-[3/4] overflow-hidden rounded-lg bg-muted p-0 transition duration-500 ease-ios active:scale-95">
-                <img src={p.src} className={`h-full w-full object-cover ${p.pending ? "blur-sm" : ""}`} alt="صورة من مكتبتك" />
-                {p.pending && <div className="shimmer absolute inset-0" aria-label="جاري المعالجة" />}
-              </Button>)}
-            </div>
-          </section>
-        ))}
-      </div>
+      <div className="gallery-fade pointer-events-none absolute inset-x-0 top-0 h-28" />
+      <button onClick={onBack} aria-label="العودة للكاميرا"
+        className="glass absolute left-4 top-[max(env(safe-area-inset-top),14px)] grid size-11 place-items-center rounded-full transition ease-ios active:scale-90">
+        <ChevronLeft className="size-5" />
+      </button>
       {open && <Viewer photo={open} onClose={() => setOpen(null)} onEdit={() => { onEdit(open); setOpen(null); }} onDelete={() => { onDelete(open.id); setOpen(null); }} />}
     </div>
   );
@@ -449,7 +423,6 @@ function Studio({ photos, photo, setPhoto, modes, onBack, onPaywall, runAI, onSa
     const out = await render(photo.src, { crop, rotate, flipX: flip.x, flipY: flip.y, filter: cssOf(adj), vignette: adj.vignette }, 2048);
     const p: Photo = { id: uid(), src: out, original: photo.src, createdAt: Date.now(), label: "معدّلة" };
     await savePhoto(p); onSaved(); setPhoto(p); reset();
-    toast.success("تم الحفظ في المعرض");
   };
   const cur = ADJ.find((a) => a.k === active)!;
   const shown = modes.filter((m) => cat === "الكل" || m.category === cat);
@@ -469,7 +442,7 @@ function Studio({ photos, photo, setPhoto, modes, onBack, onPaywall, runAI, onSa
           style={{ ...(crop ? { aspectRatio: String(crop), height: crop < 1 ? "100%" : undefined, width: crop >= 1 ? "100%" : undefined } : {}), transform: `rotate(${rotate}deg) scale(${flip.x ? -1 : 1}, ${flip.y ? -1 : 1})` }}>
           <img src={photo.src} style={{ filter: cssOf(adj) }} className={`h-full w-full ${crop ? "object-cover" : "max-h-[55vh] object-contain"} ${busy ? "scale-105 blur-md" : ""} transition`} alt="" />
           {adj.vignette > 0 && <div className="pointer-events-none absolute inset-0" style={{ boxShadow: `inset 0 0 ${adj.vignette * 2}px ${adj.vignette}px oklch(0 0 0 / ${adj.vignette / 100})` }} />}
-          {busy && <div className="shimmer absolute inset-0 grid place-items-center"><span className="glass flex items-center gap-2 rounded-full px-4 py-2 text-sm">جاري المعالجة…</span></div>}
+          {busy && <div className="shimmer absolute inset-0" />}
         </div>
       </div>
 
