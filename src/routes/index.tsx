@@ -247,7 +247,7 @@ function Camera({ last, onCapture, onGallery, onPro }: {
       </div>
 
       <div className="absolute inset-0 overflow-hidden">
-        <div className="relative h-full w-full overflow-hidden">
+        <div className="relative h-full w-full overflow-hidden" onDoubleClick={() => { setSpin((x) => x + 180); setFacing((v) => (v === "user" ? "environment" : "user")); }} style={{ touchAction: "manipulation" }}>
           <video ref={videoRef} autoPlay playsInline muted
             className="absolute inset-0 h-full w-full object-cover transition-[transform,filter] duration-500 ease-ios"
             style={{ transform: `${facing === "user" ? "scaleX(-1) " : ""}scale(${digital})`, filter: mode.id === "night" ? "brightness(1.3) contrast(1.05)" : undefined }} />

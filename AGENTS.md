@@ -8,3 +8,4 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+- Android app wraps photo.megsyai.com via Capacitor (capacitor.config.json); keep permissions to internet/camera/photos only — store policy.

@@ -1,0 +1,7 @@
+{
+  "appId": "com.megsyai.lumen",
+  "appName": "Lumen",
+  "webDir": "dist/client",
+  "server": { "url": "https://photo.megsyai.com", "cleartext": false, "allowNavigation": ["photo.megsyai.com"] },
+  "android": { "allowMixedContent": false, "backgroundColor": "#000000" }
+}
