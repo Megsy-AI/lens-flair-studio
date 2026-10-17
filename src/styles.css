@@ -147,7 +147,7 @@
 :root {
   --background: oklch(0.08 0 0);
   --foreground: oklch(0.98 0 0);
-  --primary: oklch(0.86 0.17 92);
+  --primary: oklch(0.88 0.18 95);
   --primary-foreground: oklch(0.15 0 0);
   --muted: oklch(0.22 0 0);
   --muted-foreground: oklch(0.72 0 0);
@@ -212,24 +212,21 @@ html, body { background: var(--background); color: var(--foreground); font-famil
 .mastercard-mark i { width: 20px; height: 20px; border-radius: 50%; background: var(--payment-brand-a); }
 .mastercard-mark i + i { margin-left: -7px; background: var(--payment-brand-b); opacity: .9; }
 
-/* Mode rail under the shutter: peeks, scroll-snaps, fades at edges */
-.mode-rail {
-  display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x mandatory;
-  padding: 6px 50%; scrollbar-width: none;
-  mask-image: linear-gradient(90deg, transparent, #000 32%, #000 68%, transparent);
-}
+/* ===== iOS Camera chrome ===== */
+.cam-root { background: oklch(0 0 0); }
+.cam-icon { display: grid; place-items: center; width: 40px; height: 40px; color: var(--foreground); transition: transform 300ms var(--spring); }
+.cam-icon:active { transform: scale(.88); }
+.cam-pro { position: absolute; right: 18px; bottom: 20px; height: 26px; padding: 0 10px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: .08em; color: var(--foreground); background: oklch(1 0 0 / .12); }
+.cam-grid { background-image: linear-gradient(to right, oklch(1 0 0 / .22) 1px, transparent 1px), linear-gradient(to bottom, oklch(1 0 0 / .22) 1px, transparent 1px); background-size: 33.333% 33.333%; background-position: -1px -1px; }
+.cam-shutter { width: 76px; height: 76px; border-radius: 999px; display: grid; place-items: center; background: oklch(0.3 0 0 / .9); box-shadow: inset 0 0 0 1px oklch(1 0 0 / .14); transition: transform 250ms var(--spring); }
+.cam-shutter span { width: 64px; height: 64px; border-radius: 999px; background: var(--shutter); transition: transform 250ms var(--spring), opacity 250ms; }
+.cam-shutter:active span { transform: scale(.9); }
+.cam-thumb { position: relative; flex: none; width: 52px; height: 52px; border-radius: 999px; overflow: hidden; background: oklch(0.22 0 0); box-shadow: inset 0 0 0 1px oklch(1 0 0 / .12); }
+.mode-pill { position: relative; flex: 1; min-width: 0; height: 52px; border-radius: 999px; overflow: hidden; background: oklch(0.2 0 0 / .85); backdrop-filter: blur(30px) saturate(180%); box-shadow: inset 0 1px 0 oklch(1 0 0 / .08); }
+.mode-rail { display: flex; align-items: center; height: 100%; gap: 2px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 50%; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .mode-rail::-webkit-scrollbar { display: none; }
-.mode-chip {
-  flex: none; scroll-snap-align: center; padding: 7px 14px; border-radius: 999px;
-  font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--muted-foreground);
-  transition: color 400ms var(--spring), background 400ms var(--spring), transform 400ms var(--spring), box-shadow 400ms var(--spring);
-  transform: scale(.92);
-}
-.mode-chip-active {
-  color: var(--primary); background: var(--glass-strong); transform: scale(1);
-  backdrop-filter: blur(24px) saturate(180%);
-  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.3), 0 4px 16px oklch(0 0 0 / 0.35);
-}
+.mode-chip { flex: none; scroll-snap-align: center; height: 44px; padding: 0 18px; border-radius: 999px; font-size: 15px; font-weight: 500; letter-spacing: .04em; color: oklch(1 0 0 / .78); transition: color 350ms var(--spring), background 350ms var(--spring), box-shadow 350ms var(--spring); }
+.mode-chip-active { color: var(--primary); background: oklch(0.09 0 0 / .7); box-shadow: inset 0 1px 0 oklch(1 0 0 / .1), 0 0 0 1px oklch(1 0 0 / .05); }
 .gallery-fade { background: linear-gradient(to bottom, var(--gallery-surface), transparent); }
 .gallery-tile img { transition: transform 500ms var(--spring); }
 .gallery-tile:active img { transform: scale(.96); }
