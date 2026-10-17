@@ -78,7 +78,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" },
-      { title: "Lumen Camera" },
+      { title: "Lumen" },
       { name: "description", content: "AI camera" },
       { name: "author", content: "Lovable" },
       { property: "og:title", content: "Lumen Camera" },
