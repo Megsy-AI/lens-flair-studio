@@ -41,7 +41,7 @@ export const createCheckout = createServerFn({ method: "POST" })
       const id = provider === 'dodo' ? c.session_id : c._id;
       if (!url || !id || !/^https:\/\//.test(url)) return { error: 'لم يتم تجهيز صفحة الدفع' };
       const saved = await db.from('lumen_payment_orders').update({ provider_session: id }).eq('id', order.id);
-      if (saved.error) return { error: 'تعذر حفظ طلب الدفع' };
+      if (saved.error) return { error: 'تعذر Save طلب الدفع' };
       return { url, orderId: order.id, provider };
     } catch { return { error: 'تعذر الاتصال بشركة الدفع' }; }
   });

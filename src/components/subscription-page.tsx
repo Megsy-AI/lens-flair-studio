@@ -85,27 +85,27 @@ export function SubscriptionPage({ onClose }: { onClose: () => void }) {
     finally { setLoading(false); }
   };
   return (
-    <div className="relative h-full overflow-y-auto" dir="rtl">
+    <div className="relative h-full overflow-y-auto" dir="ltr">
       <img src={paywallBg} className="pointer-events-none absolute inset-0 h-full w-full object-cover" alt="" />
       <div className="pointer-events-none absolute inset-0 bg-scrim" />
-      <Button variant="ghost" size="icon" onClick={onClose} aria-label="إغلاق الاشتراكات" className="glass absolute left-4 top-[max(env(safe-area-inset-top),14px)] z-10 size-10 rounded-full"><X /></Button>
+      <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close" className="glass absolute left-4 top-[max(env(safe-area-inset-top),14px)] z-10 size-10 rounded-full"><X /></Button>
       <div className="relative mx-auto flex min-h-full max-w-lg flex-col px-5 pb-[max(env(safe-area-inset-bottom),22px)] pt-[calc(max(env(safe-area-inset-top),14px)+54px)]">
         <h1 className="text-center text-4xl font-light" dir="ltr">lumen <span className="rounded-md border border-foreground px-2 text-3xl">pro</span></h1>
         <div className="min-h-10 flex-1" />
         <ul className="mb-5 space-y-2 text-sm font-medium">
           {['تحويلات الذكاء الاصطناعي', 'بدون إعلانات', 'استوديو الصور بالكامل'].map(x => <li key={x} className="flex items-center gap-2"><Check className="size-4" />{x}</li>)}
         </ul>
-        <div className="glass flex items-center justify-between rounded-lg px-4 py-3"><div><h2 className="font-semibold">اشتراك شهري</h2><p className="mt-1 text-xs text-muted-foreground">{['apple', 'google', 'other'].includes(method) ? 'يتجدد شهرياً · يمكنك الإلغاء' : 'شهر واحد · بدون تجديد تلقائي'}</p></div><span className="text-3xl font-semibold" dir="ltr">$3<span className="ml-1 text-xs">USD</span></span></div>
-        <h2 className="mb-2 mt-4 text-xs font-semibold">طريقة الدفع</h2>
-        <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="طريقة الدفع">
+        <div className="glass flex items-center justify-between rounded-lg px-4 py-3"><div><h2 className="font-semibold">Monthly</h2><p className="mt-1 text-xs text-muted-foreground">{['apple', 'google', 'other'].includes(method) ? 'Renews monthly · cancel anytime' : 'One month · no auto-renew'}</p></div><span className="text-3xl font-semibold" dir="ltr">$3<span className="ml-1 text-xs">USD</span></span></div>
+        <h2 className="mb-2 mt-4 text-xs font-semibold">Payment method</h2>
+        <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Payment method">
           {methods.map(m => <Button variant="ghost" key={m.id} role="radio" aria-checked={method === m.id} aria-label={m.name} onClick={() => { setMethod(m.id); setError(''); }} className={`glass h-14 flex-col gap-1 rounded-lg px-1 text-[10px] ${method === m.id ? 'ring-1 ring-foreground' : 'text-muted-foreground'}`}><MethodIcon method={m} /><span>{m.name}</span></Button>)}
         </div>
         {error && <p role="alert" className="mt-3 rounded-lg bg-background p-3 text-xs text-destructive">{error}</p>}
-        <Button onClick={subscribe} disabled={loading} className="mt-4 h-12 w-full rounded-full bg-pro text-base font-semibold text-pro-foreground hover:bg-pro/90">{loading ? <Loader2 className="animate-spin" /> : <>اشترك الآن <ChevronLeft /></>}</Button>
+        <Button onClick={subscribe} disabled={loading} className="mt-4 h-12 w-full rounded-full bg-pro text-base font-semibold text-pro-foreground hover:bg-pro/90">{loading ? <Loader2 className="animate-spin" /> : <>Subscribe <ChevronLeft /></>}</Button>
       </div>
       {payment && <div className="fixed inset-0 z-50 flex flex-col bg-background">
-        <header className="glass flex shrink-0 items-center justify-between px-4 py-3"><span className="flex items-center gap-2 text-sm font-semibold"><CreditCard />الدفع الآمن · $3 USD</span><Button variant="ghost" size="icon" onClick={() => setPayment(null)} aria-label="إغلاق الدفع"><X /></Button></header>
-        {payment.provider === 'dodo' ? <div id="lumen-dodo-checkout" className="min-h-0 flex-1 overflow-y-auto" /> : <iframe src={payment.url} title="الدفع بكاشير" className="min-h-0 w-full flex-1 border-0" allow="payment" />}
+        <header className="glass flex shrink-0 items-center justify-between px-4 py-3"><span className="flex items-center gap-2 text-sm font-semibold"><CreditCard />Secure payment · $3 USD</span><Button variant="ghost" size="icon" onClick={() => setPayment(null)} aria-label="Close"><X /></Button></header>
+        {payment.provider === 'dodo' ? <div id="lumen-dodo-checkout" className="min-h-0 flex-1 overflow-y-auto" /> : <iframe src={payment.url} title="Pay with Kashier" className="min-h-0 w-full flex-1 border-0" allow="payment" />}
       </div>}
     </div>
   );
