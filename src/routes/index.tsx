@@ -215,27 +215,28 @@ function Camera({ last, onCapture, onGallery, onPro }: {
     setBusy(false);
   };
 
-  const touchX = useRef(0);
-  const dialRef = useRef<HTMLDivElement>(null);
-  const onDial = (clientX: number) => {
-    const r = dialRef.current!.getBoundingClientRect();
-    setZoom(Math.max(0.5, fromPos(Math.min(1, Math.max(0, (clientX - r.left) / r.width)))));
+  const railRef = useRef<HTMLDivElement>(null);
+  const scrollToMode = (i: number, smooth = true) => {
+    const rail = railRef.current; const el = rail?.children[i] as HTMLElement | undefined;
+    if (rail && el) rail.scrollTo({ left: el.offsetLeft - rail.clientWidth / 2 + el.clientWidth / 2, behavior: smooth ? "smooth" : "auto" });
   };
-  const zLabel = zoom < 1 ? `.${Math.round(zoom * 10)}` : zoom >= 10 ? Math.round(zoom) : zoom.toFixed(zoom % 1 ? 1 : 0);
+  useEffect(() => { scrollToMode(modeIdx, false); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const onRail = () => {
+    const rail = railRef.current; if (!rail) return;
+    const c = rail.scrollLeft + rail.clientWidth / 2;
+    let best = 0, dist = Infinity;
+    Array.from(rail.children).forEach((n, i) => { const el = n as HTMLElement; const d = Math.abs(el.offsetLeft + el.clientWidth / 2 - c); if (d < dist) { dist = d; best = i; } });
+    if (best !== modeIdx) setModeIdx(best);
+  };
+  void setZoom; void dial; void setDial;
 
   return (
-    <div className="relative flex h-full w-full flex-col"
-      onTouchStart={(e) => (touchX.current = e.touches[0]!.clientX)}
-      onTouchEnd={(e) => {
-        if (dial) return;
-        const dx = e.changedTouches[0]!.clientX - touchX.current;
-        if (Math.abs(dx) > 50) setModeIdx((i) => Math.min(MODES.length - 1, Math.max(0, i + (dx < 0 ? 1 : -1))));
-      }}>
+    <div className="relative flex h-full w-full flex-col">
       <div className="relative z-20 flex items-center justify-between px-5 pt-[max(env(safe-area-inset-top),14px)] pb-3">
         <button onClick={() => setFlash((f) => !f)} className="glass grid size-10 place-items-center rounded-full transition ease-ios active:scale-90" aria-label="الفلاش">
           {flash ? <Zap className="size-5 text-primary" fill="currentColor" /> : <ZapOff className="size-5" />}
         </button>
-        <button onClick={onPro} className="glass flex h-10 items-center gap-1.5 rounded-full px-3.5 text-xs font-bold tracking-wide transition ease-ios active:scale-90" aria-label="الاشتراك">
+        <button onClick={onPro} className="glass h-10 rounded-full px-4 text-xs font-bold tracking-wide transition ease-ios active:scale-90" aria-label="الاشتراك">
           PRO
         </button>
       </div>
@@ -245,69 +246,33 @@ function Camera({ last, onCapture, onGallery, onPro }: {
           style={{ aspectRatio: mode.aspect === 1 ? "1" : mode.aspect > 1 ? "16/9" : "3/4", maxHeight: "100%" }}>
           <video ref={videoRef} autoPlay playsInline muted
             className="absolute inset-0 h-full w-full object-cover transition-[transform,filter] duration-500 ease-ios"
-            style={{ transform: `scale(${digital}) ${facing === "user" ? "scaleX(-1)" : ""}`, filter: mode.id === "night" ? "brightness(1.3) contrast(1.05)" : undefined }} />
+            style={{ transform: facing === "user" ? "scaleX(-1)" : undefined, filter: mode.id === "night" ? "brightness(1.3) contrast(1.05)" : undefined }} />
           {mode.id === "portrait" && <div className="pop-in pointer-events-none absolute inset-0 shadow-[inset_0_0_140px_50px_var(--scrim)]" />}
           {err && <div className="absolute inset-0 grid place-items-center p-8 text-center text-muted-foreground">{err}</div>}
           {blink && <div className="absolute inset-0 bg-shutter" />}
         </div>
-
-        <div className="absolute bottom-4 left-1/2 w-[86%] -translate-x-1/2">
-          {dial ? (
-            <div className="glass pop-in rounded-full px-4 py-2">
-              <div ref={dialRef} className="relative h-8 touch-none"
-                onPointerDown={(e) => { (e.target as Element).setPointerCapture(e.pointerId); onDial(e.clientX); }}
-                onPointerMove={(e) => e.buttons && onDial(e.clientX)}
-                onPointerUp={() => setTimeout(() => setDial(false), 1400)}>
-                {Array.from({ length: 41 }).map((_, i) => (
-                  <span key={i} className={`absolute top-1/2 w-px -translate-y-1/2 bg-foreground/60 ${i % 5 ? "h-2" : "h-4"}`} style={{ left: `${(i / 40) * 100}%` }} />
-                ))}
-                {ZOOM_STOPS.map((z) => (
-                  <span key={z} className="absolute -bottom-1 -translate-x-1/2 text-[9px] text-muted-foreground" style={{ left: `${toPos(z) * 100}%` }}>{z}</span>
-                ))}
-                <span className="absolute top-0 h-8 w-0.5 -translate-x-1/2 rounded bg-primary transition-[left] duration-150 ease-ios" style={{ left: `${toPos(zoom) * 100}%` }} />
-              </div>
-            </div>
-          ) : (
-            <div className="glass mx-auto flex w-fit gap-1 rounded-full p-1">
-              {[0.5, 1, 2, 5, 10].map((z) => {
-                const near = (z === 10 ? zoom >= 10 : z === 5 ? zoom >= 5 && zoom < 10 : z === 2 ? zoom >= 2 && zoom < 5 : z === 1 ? zoom >= 1 && zoom < 2 : zoom < 1);
-                return (
-                  <button key={z} onClick={() => setZoom(z)} onDoubleClick={() => setDial(true)} onContextMenu={(e) => { e.preventDefault(); setDial(true); }}
-                    className={`grid size-9 place-items-center rounded-full text-[11px] font-bold transition-all duration-300 ease-ios ${near ? "scale-110 bg-scrim text-primary" : ""}`}>
-                    {near ? `${zLabel}×` : z === 0.5 ? ".5" : z}
-                  </button>
-                );
-              })}
-              <button onClick={() => setDial(true)} className="grid h-9 place-items-center rounded-full px-2 text-[10px] font-bold text-muted-foreground">100</button>
-            </div>
-          )}
-        </div>
       </div>
 
-      <div className="px-4 py-3">
-        <div className="camera-modes glass relative mx-auto grid h-12 w-full max-w-lg grid-cols-5 rounded-full p-1" role="tablist" aria-label="أوضاع التصوير">
-          <span className="mode-indicator absolute bottom-1 top-1 rounded-full" style={{ width: "calc((100% - 8px) / 5)", left: `calc(4px + (100% - 8px) / 5 * ${modeIdx})` }} />
-          {MODES.map((m, i) => (
-            <Button variant="ghost" key={m.id} role="tab" aria-selected={i === modeIdx} onClick={() => setModeIdx(i)}
-              className={`relative z-10 h-10 min-w-0 rounded-full px-0 text-[10px] font-semibold transition-all duration-500 ease-ios ${i === modeIdx ? "text-primary" : "text-muted-foreground"}`}>
-              {({ night: "ليلي", portrait: "بورتريه", photo: "صورة", square: "مربع", pano: "بانوراما" })[m.id]}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between px-6 pt-3 pb-[max(env(safe-area-inset-bottom),28px)]">
-        <button onClick={onGallery} className="relative size-14 overflow-hidden rounded-xl border-2 border-glass-border bg-glass transition ease-ios active:scale-90" aria-label="المعرض">
+      <div className="flex items-center justify-between px-8 pt-5 pb-3">
+        <button onClick={onGallery} className="relative size-14 overflow-hidden rounded-2xl border border-glass-border bg-glass transition ease-ios active:scale-90" aria-label="المعرض">
           {last ? <img src={last.src} className="h-full w-full object-cover" alt="" /> : <Images className="m-auto size-6 text-muted-foreground" />}
           {last?.pending && <div className="shimmer absolute inset-0" />}
         </button>
         <button onClick={shoot} aria-label="التقاط" className="grid size-[78px] place-items-center rounded-full border-4 border-shutter transition ease-ios active:scale-90">
           <span className={`size-[62px] rounded-full bg-shutter transition-all duration-300 ease-ios ${busy ? "scale-75 opacity-70" : ""}`} />
         </button>
-        <button onClick={() => { setSpin((s) => s + 180); setFacing((f) => (f === "user" ? "environment" : "user")); setZoom(1); }}
-          className="glass grid size-14 place-items-center rounded-full" aria-label="قلب الكاميرا">
-          <RefreshCw className="size-6 transition-transform duration-500 ease-ios" style={{ transform: `rotate(${spin}deg)` }} />
-        </button>
+        <span className="size-14" aria-hidden />
+      </div>
+
+      <div className="mode-rail-wrap relative pb-[max(env(safe-area-inset-bottom),20px)]">
+        <div ref={railRef} onScroll={onRail} className="mode-rail" role="tablist" aria-label="أوضاع التصوير">
+          {MODES.map((m, i) => (
+            <button key={m.id} role="tab" aria-selected={i === modeIdx} onClick={() => scrollToMode(i)}
+              className={`mode-chip ${i === modeIdx ? "mode-chip-active" : ""}`}>
+              {({ night: "ليلي", portrait: "بورتريه", photo: "صورة", square: "مربع", pano: "بانوراما" })[m.id]}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
