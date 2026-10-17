@@ -1,0 +1,1 @@
+CREATE POLICY lumen_orders_no_client_access ON public.lumen_payment_orders FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);
