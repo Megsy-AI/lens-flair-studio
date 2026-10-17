@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Toaster, toast } from "sonner";
 import {
   RefreshCw, Zap, ZapOff, Sparkles, Wand2, Crop, SlidersHorizontal, Trash2, Download, Crown, Check, ChevronLeft, Images,
-  Share2, Pencil, Plus, X, RotateCw, FlipHorizontal, FlipVertical, Palette, Loader2, Eraser, Scissors, ArrowUp, Sun, Sparkle, Contrast, Droplet, Thermometer, CloudFog, CircleHalf, Aperture, Circle,
+  Share2, Pencil, Plus, X, RotateCw, FlipHorizontal, FlipVertical, Palette, Loader2, Eraser, Scissors, ArrowUp, Sun, Sparkle, Contrast, Droplet, Thermometer, CloudFog, Moon, Aperture, Circle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { aiEditImage, getPublicConfig } from "@/lib/ai.functions";
@@ -416,7 +416,7 @@ function AgentMark({ className = "" }: { className?: string }) {
 }
 
 type Msg = { id: string; role: "user" | "agent"; text: string };
-const ADJ_ICONS: Record<string, typeof Sun> = { exposure: Sun, brightness: Sparkle, contrast: Contrast, saturate: Droplet, warmth: Thermometer, tint: Palette, fade: CloudFog, mono: CircleHalf, blur: Aperture, vignette: Circle };
+const ADJ_ICONS: Record<string, typeof Sun> = { exposure: Sun, brightness: Sparkle, contrast: Contrast, saturate: Droplet, warmth: Thermometer, tint: Palette, fade: CloudFog, mono: Moon, blur: Aperture, vignette: Circle };
 
 function Studio({ photo, setPhoto, modes, onBack, onPaywall, runAI, onSaved }: {
   photos: Photo[]; photo: Photo | null; setPhoto: (p: Photo | null) => void; modes: AIMode[]; onBack: () => void; onPaywall: () => void;
