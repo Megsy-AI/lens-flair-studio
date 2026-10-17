@@ -231,14 +231,12 @@ function Camera({ last, onCapture, onGallery, onPro }: {
   void setZoom; void dial; void setDial;
 
   return (
-    <div className="relative flex h-full w-full flex-col">
-      <div className="relative z-20 flex items-center justify-between px-5 pt-[max(env(safe-area-inset-top),14px)] pb-3">
-        <button onClick={() => setFlash((f) => !f)} className="glass grid size-10 place-items-center rounded-full transition ease-ios active:scale-90" aria-label="Flash">
-          {flash ? <Zap className="size-5 text-primary" fill="currentColor" /> : <ZapOff className="size-5" />}
+    <div className="cam-root relative flex h-full w-full flex-col">
+      <div className="cam-topbar relative z-20 flex items-center justify-center gap-9 pt-[max(env(safe-area-inset-top),18px)] pb-4">
+        <button onClick={() => setFlash((f) => !f)} className="cam-icon" aria-label="Flash">
+          {flash ? <Zap className="size-[22px] text-primary" fill="currentColor" strokeWidth={1.6} /> : <ZapOff className="size-[22px]" strokeWidth={1.6} />}
         </button>
-        <button onClick={onPro} className="glass h-10 rounded-full px-4 text-xs font-bold tracking-wide transition ease-ios active:scale-90" aria-label="Subscription">
-          PRO
-        </button>
+        <button onClick={onPro} className="cam-pro" aria-label="Subscription">PRO</button>
       </div>
 
       <div className="relative flex flex-1 items-center justify-center overflow-hidden">
@@ -247,31 +245,35 @@ function Camera({ last, onCapture, onGallery, onPro }: {
           <video ref={videoRef} autoPlay playsInline muted
             className="absolute inset-0 h-full w-full object-cover transition-[transform,filter] duration-500 ease-ios"
             style={{ transform: facing === "user" ? "scaleX(-1)" : undefined, filter: mode.id === "night" ? "brightness(1.3) contrast(1.05)" : undefined }} />
+          <div className="cam-grid pointer-events-none absolute inset-0" />
           {mode.id === "portrait" && <div className="pop-in pointer-events-none absolute inset-0 shadow-[inset_0_0_140px_50px_var(--scrim)]" />}
-          {err && <div className="absolute inset-0 grid place-items-center p-8 text-center text-muted-foreground">{err}</div>}
+          {err && <div className="absolute inset-0 grid place-items-center p-8 text-center text-[15px] text-muted-foreground">{err}</div>}
           {blink && <div className="absolute inset-0 bg-shutter" />}
         </div>
       </div>
 
-      <div className="flex items-center justify-between px-8 pt-5 pb-3">
-        <button onClick={onGallery} className="relative size-14 overflow-hidden rounded-2xl border border-glass-border bg-glass transition ease-ios active:scale-90" aria-label="Photos">
-          {last ? <img src={last.src} className="h-full w-full object-cover" alt="" /> : <Images className="m-auto size-6 text-muted-foreground" />}
-          {last?.pending && <div className="shimmer absolute inset-0" />}
-        </button>
-        <button onClick={shoot} aria-label="Shutter" className="grid size-[78px] place-items-center rounded-full border-4 border-shutter transition ease-ios active:scale-90">
-          <span className={`size-[62px] rounded-full bg-shutter transition-all duration-300 ease-ios ${busy ? "scale-75 opacity-70" : ""}`} />
-        </button>
-        <span className="size-14" aria-hidden />
-      </div>
-
-      <div className="mode-rail-wrap relative pb-[max(env(safe-area-inset-bottom),20px)]">
-        <div ref={railRef} onScroll={onRail} className="mode-rail" role="tablist" aria-label="Camera modes">
-          {MODES.map((m, i) => (
-            <button key={m.id} role="tab" aria-selected={i === modeIdx} onClick={() => scrollToMode(i)}
-              className={`mode-chip ${i === modeIdx ? "mode-chip-active" : ""}`}>
-              {({ night: "NIGHT", portrait: "PORTRAIT", photo: "PHOTO", square: "SQUARE", pano: "PANO" })[m.id]}
-            </button>
-          ))}
+      <div className="cam-bottom pb-[max(env(safe-area-inset-bottom),18px)]">
+        <div className="flex justify-center pt-5 pb-5">
+          <button onClick={shoot} aria-label="Shutter" className="cam-shutter">
+            <span className={busy ? "scale-[.86] opacity-80" : ""} />
+          </button>
+        </div>
+        <div className="flex items-center gap-3 px-5">
+          <button onClick={onGallery} className="cam-thumb" aria-label="Photos">
+            {last ? <img src={last.src} className="h-full w-full object-cover" alt="" /> : null}
+            {last?.pending && <div className="shimmer absolute inset-0" />}
+          </button>
+          <div className="mode-pill">
+            <div ref={railRef} onScroll={onRail} className="mode-rail" role="tablist" aria-label="Camera modes">
+              {MODES.map((m, i) => (
+                <button key={m.id} role="tab" aria-selected={i === modeIdx} onClick={() => scrollToMode(i)}
+                  className={`mode-chip ${i === modeIdx ? "mode-chip-active" : ""}`}>
+                  {({ night: "NIGHT", portrait: "PORTRAIT", photo: "PHOTO", square: "SQUARE", pano: "PANO" })[m.id]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <span className="size-[52px] shrink-0" aria-hidden />
         </div>
       </div>
     </div>
