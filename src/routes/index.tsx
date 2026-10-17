@@ -74,6 +74,7 @@ async function render(src: string, e: Partial<Edit> = {}, max = 1280): Promise<s
 type View = "camera" | "gallery" | "studio" | "pro";
 
 function App() {
+  const libRef = useRef<HTMLInputElement>(null);
   const [view, setView] = useState<View>("camera");
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [studioPhoto, setStudioPhoto] = useState<Photo | null>(null);
@@ -112,10 +113,11 @@ function App() {
   return (
     <div className="fixed inset-0 overflow-hidden bg-background text-foreground select-none" dir="ltr">
       <Toaster position="top-center" theme="dark" />
+      <input ref={libRef} type="file" accept="image/*" multiple hidden onChange={async (e) => { await importDeviceFiles(e.target.files); e.target.value = ""; refresh(); }} />
       <div key={view} className="pop-in h-full">
         {view === "camera" && (
           <Camera last={photos[0]} onCapture={(img, m) => runAI(img, CAMERA_PROMPT + m.extra, "Enhanced")}
-            onGallery={() => setView("gallery")} onPro={() => setView("pro")} />
+            onGallery={() => { if (!localStorage.getItem("lumen-library")) libRef.current?.click(); setView("gallery"); }} onPro={() => setView("pro")} />
         )}
         {view === "gallery" && (
           <Gallery photos={photos} onBack={() => setView("camera")} onImported={refresh}
@@ -228,13 +230,14 @@ function Camera({ last, onCapture, onGallery, onPro }: {
     Array.from(rail.children).forEach((n, i) => { const el = n as HTMLElement; const d = Math.abs(el.offsetLeft + el.clientWidth / 2 - c); if (d < dist) { dist = d; best = i; } });
     if (best !== modeIdx) setModeIdx(best);
   };
-  void setZoom; void dial; void setDial;
+  void dial; void setDial;
+  const ZOOMS = [0.5, 1, 2, 5];
 
   return (
     <div className="cam-root relative h-full w-full">
-      <div className="cam-topbar absolute inset-x-0 top-0 z-20 flex items-center justify-center gap-9 pt-[max(env(safe-area-inset-top),18px)] pb-4">
-        <button onClick={() => setFlash((f) => !f)} className="cam-icon" aria-label="Flash">
-          {flash ? <Zap className="size-[22px] text-primary" fill="currentColor" strokeWidth={1.6} /> : <ZapOff className="size-[22px]" strokeWidth={1.6} />}
+      <div className="cam-topbar absolute inset-x-0 top-0 z-20 flex items-center justify-between px-5 pt-[max(env(safe-area-inset-top),16px)] pb-4">
+        <button onClick={() => setFlash((f) => !f)} className={`cam-glass-btn ${flash ? "cam-glass-on" : ""}`} aria-label="Flash">
+          {flash ? <Zap className="size-[19px]" fill="currentColor" strokeWidth={1.6} /> : <ZapOff className="size-[19px]" strokeWidth={1.7} />}
         </button>
         <button onClick={onPro} className="cam-pro" aria-label="Subscription">PRO</button>
       </div>
@@ -243,7 +246,7 @@ function Camera({ last, onCapture, onGallery, onPro }: {
         <div className="relative h-full w-full overflow-hidden">
           <video ref={videoRef} autoPlay playsInline muted
             className="absolute inset-0 h-full w-full object-cover transition-[transform,filter] duration-500 ease-ios"
-            style={{ transform: facing === "user" ? "scaleX(-1)" : undefined, filter: mode.id === "night" ? "brightness(1.3) contrast(1.05)" : undefined }} />
+            style={{ transform: `${facing === "user" ? "scaleX(-1) " : ""}scale(${digital})`, filter: mode.id === "night" ? "brightness(1.3) contrast(1.05)" : undefined }} />
                     {mode.id === "portrait" && <div className="pop-in pointer-events-none absolute inset-0 shadow-[inset_0_0_140px_50px_var(--scrim)]" />}
           {err && <div className="absolute inset-0 grid place-items-center p-8 text-center text-[15px] text-muted-foreground">{err}</div>}
           {blink && <div className="absolute inset-0 bg-shutter" />}
@@ -251,12 +254,22 @@ function Camera({ last, onCapture, onGallery, onPro }: {
       </div>
 
       <div className="cam-bottom absolute inset-x-0 bottom-0 z-20 pb-[max(env(safe-area-inset-bottom),18px)]">
-        <div className="flex justify-center pt-5 pb-5">
+        <div className="flex items-center justify-center gap-1 pb-4" role="group" aria-label="Zoom">
+          {ZOOMS.map((z) => {
+            const on = zoom === z;
+            return (
+              <button key={z} onClick={() => setZoom(z)} aria-label={`Zoom ${z}x`} className={`zoom-btn ${on ? "zoom-on" : ""}`}>
+                {z === 0.5 ? ".5" : z}{on && "×"}
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex justify-center pb-6">
           <button onClick={shoot} aria-label="Shutter" className="cam-shutter">
             <span className={busy ? "scale-[.86] opacity-80" : ""} />
           </button>
         </div>
-        <div className="flex items-center gap-3 px-5">
+        <div className="flex items-center justify-between px-6">
           <button onClick={onGallery} className="cam-thumb" aria-label="Photos">
             {last ? <img src={last.src} className="h-full w-full object-cover" alt="" /> : null}
             {last?.pending && <div className="shimmer absolute inset-0" />}
@@ -266,13 +279,18 @@ function Camera({ last, onCapture, onGallery, onPro }: {
               {MODES.map((m, i) => (
                 <button key={m.id} role="tab" aria-selected={i === modeIdx} onClick={() => scrollToMode(i)}
                   className={`mode-chip ${i === modeIdx ? "mode-chip-active" : ""}`}>
-                  {({ night: "NIGHT", portrait: "PORTRAIT", photo: "PHOTO", square: "SQUARE", pano: "PANO" })[m.id]}
+                  {m.label}
                 </button>
               ))}
             </div>
           </div>
           <button onClick={() => { setSpin((x) => x + 180); setFacing((v) => (v === "user" ? "environment" : "user")); }} className="cam-flip" aria-label="Switch camera">
-            <RefreshCw className="size-[30px]" strokeWidth={1.8} style={{ transform: `rotate(${spin}deg)` }} />
+            <svg viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" style={{ transform: `rotate(${spin}deg)` }}>
+              <path d="M6.5 14A9.7 9.7 0 0 1 24 10.2" />
+              <path d="M25.5 18A9.7 9.7 0 0 1 8 21.8" />
+              <path d="M27.6 8.2 L24.6 14.2 L20.6 9.6 Z" fill="currentColor" stroke="none" />
+              <path d="M4.4 23.8 L7.4 17.8 L11.4 22.4 Z" fill="currentColor" stroke="none" />
+            </svg>
           </button>
         </div>
       </div>
@@ -291,19 +309,18 @@ function download(p: Photo) {
   const a = document.createElement("a"); a.href = p.src; a.download = `lumen-${p.id}.jpg`; a.click();
   toast.success("Saved");
 }
-function Gallery({ photos, onBack, onEdit, onDelete, onImported }: {
-  photos: Photo[]; onBack: () => void; onEdit: (p: Photo) => void; onDelete: (id: string) => void; onImported: () => void;
+export async function importDeviceFiles(files: FileList | null) {
+  if (!files?.length) return;
+  for (const f of Array.from(files)) {
+    const src = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(f); });
+    await savePhoto({ id: uid(), src: await render(src, {}, 2048), createdAt: f.lastModified || Date.now(), label: "Original" });
+  }
+  localStorage.setItem("lumen-library", "1");
+}
+function Gallery({ photos, onBack, onEdit, onDelete }: {
+  photos: Photo[]; onBack: () => void; onEdit: (p: Photo) => void; onDelete: (id: string) => void; onImported?: () => void;
 }) {
   const [open, setOpen] = useState<Photo | null>(null);
-  const pickRef = useRef<HTMLInputElement>(null);
-  const importFiles = async (files: FileList | null) => {
-    if (!files?.length) return;
-    for (const f of Array.from(files)) {
-      const src = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(f); });
-      await savePhoto({ id: uid(), src: await render(src, {}, 2048), createdAt: f.lastModified || Date.now(), label: "Original" });
-    }
-    onImported();
-  };
   return (
     <div className="gallery-page relative h-full">
       <div className="h-full overflow-y-auto pb-[max(env(safe-area-inset-bottom),40px)]">
@@ -322,12 +339,6 @@ function Gallery({ photos, onBack, onEdit, onDelete, onImported }: {
         className="gallery-back absolute left-4 top-[max(env(safe-area-inset-top),16px)] grid size-11 place-items-center rounded-full transition ease-ios active:scale-90">
         <ChevronLeft className="size-5" />
       </button>
-      <input ref={pickRef} type="file" accept="image/*" multiple hidden onChange={(e) => { importFiles(e.target.files); e.target.value = ""; }} />
-      <button onClick={() => pickRef.current?.click()} aria-label="Add photos from device"
-        className="gallery-back absolute right-4 top-[max(env(safe-area-inset-top),16px)] grid size-11 place-items-center rounded-full transition ease-ios active:scale-90">
-        <Plus className="size-5" />
-      </button>
-      {photos.length === 0 && <button onClick={() => pickRef.current?.click()} className="absolute inset-0 m-auto h-fit w-fit text-[15px] text-primary">Add photos from your device</button>}
       {open && <Viewer photo={open} onClose={() => setOpen(null)} onEdit={() => { onEdit(open); setOpen(null); }} onDelete={() => { onDelete(open.id); setOpen(null); }} />}
     </div>
   );
