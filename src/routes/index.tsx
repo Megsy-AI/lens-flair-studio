@@ -231,7 +231,7 @@ function Camera({ last, onCapture, onGallery, onPro }: {
     if (best !== modeIdx) setModeIdx(best);
   };
   void dial; void setDial;
-  const ZOOMS = [0.5, 1, 2, 5];
+  const ZOOMS = [0.5, 1, 2, 8];
 
   return (
     <div className="cam-root relative h-full w-full">
