@@ -218,11 +218,15 @@ function Camera({ last, onCapture, onGallery, onPro }: {
   };
 
   const railRef = useRef<HTMLDivElement>(null);
+  const [modesOpen, setModesOpen] = useState(false);
+  const closeT = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const armClose = () => { if (closeT.current) clearTimeout(closeT.current); closeT.current = setTimeout(() => setModesOpen(false), 1600); };
   const scrollToMode = (i: number, smooth = true) => {
     const rail = railRef.current; const el = rail?.children[i] as HTMLElement | undefined;
     if (rail && el) rail.scrollTo({ left: el.offsetLeft - rail.clientWidth / 2 + el.clientWidth / 2, behavior: smooth ? "smooth" : "auto" });
   };
   useEffect(() => { scrollToMode(modeIdx, false); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (modesOpen) { requestAnimationFrame(() => scrollToMode(modeIdx, false)); armClose(); } }, [modesOpen]); // eslint-disable-line react-hooks/exhaustive-deps
   const onRail = () => {
     const rail = railRef.current; if (!rail) return;
     const c = rail.scrollLeft + rail.clientWidth / 2;
