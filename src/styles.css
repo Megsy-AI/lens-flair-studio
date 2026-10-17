@@ -302,3 +302,18 @@ html, body { background: var(--background); color: var(--foreground); font-famil
 .mode-pill { flex: none; width: 200px; height: 44px; background: oklch(0.2 0 0 / .45); backdrop-filter: blur(24px) saturate(180%); box-shadow: inset 0 1px 0 oklch(1 0 0 / .18), inset 0 0 0 .5px oklch(1 0 0 / .12); mask-image: none; }
 .mode-chip { height: 36px; padding: 0 14px; font-size: 13px; }
 .mode-chip-active { background: oklch(0.08 0 0 / .7); }
+
+/* v5: spaced zoom, fixed center mode, editor bar */
+.zoom-row { gap: 12px; }
+.zoom-row > .zoom-btn { width: 34px; height: 34px; }
+.zoom-row > .zoom-on { width: 38px; height: 38px; }
+.mode-center { position: absolute; left: 50%; top: 4px; bottom: 4px; width: 86px; transform: translateX(-50%); border-radius: 999px; background: oklch(0.08 0 0 / .7); box-shadow: inset 0 1px 0 oklch(1 0 0 / .14), inset 0 0 0 .5px oklch(1 0 0 / .1); pointer-events: none; }
+.mode-rail { position: relative; mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); }
+.mode-chip, .mode-chip-active { width: 86px; padding: 0; background: transparent !important; box-shadow: none !important; backdrop-filter: none; }
+.mode-chip-active { color: var(--primary); }
+.edit-bar { background: oklch(0.2 0 0 / .5); backdrop-filter: blur(28px) saturate(180%); box-shadow: inset 0 1px 0 oklch(1 0 0 / .18), inset 0 0 0 .5px oklch(1 0 0 / .12); }
+.edit-tab { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 58px; padding: 6px 4px; font-size: 11px; color: var(--muted-foreground); position: relative; transition: color 300ms var(--spring); }
+.edit-tab-on { color: var(--foreground); font-weight: 600; }
+.edit-tab-on::before { content: ""; position: absolute; top: -3px; border: 4px solid transparent; border-top-color: var(--primary); }
+.tool-circle { width: 58px; height: 58px; border-radius: 999px; display: grid; place-items: center; background: oklch(1 0 0 / .08); backdrop-filter: blur(20px); box-shadow: inset 0 1px 0 oklch(1 0 0 / .14); transition: transform 300ms var(--spring); }
+button:active .tool-circle { transform: scale(.9); }
