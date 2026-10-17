@@ -22,7 +22,7 @@ export const createCheckout = createServerFn({ method: "POST" })
     const { data: order, error } = await db.from('lumen_payment_orders').insert({ device_hash: hash, provider, amount: MONTHLY_USD_CENTS, currency: 'USD' }).select('id').single();
     if (error || !order) return { error: 'تعذر تجهيز طلب الدفع' };
     const requestUrl = new URL(getRequest().url);
-    const origin = ['localhost', '127.0.0.1'].includes(requestUrl.hostname) ? 'https://project--8be0a869-847d-45f9-911e-6a5a4ccc1fa2-dev.lovable.app' : requestUrl.origin;
+    const origin = ['localhost', '127.0.0.1'].includes(requestUrl.hostname) ? 'https://project--9f772b0e-384e-4a61-8632-e3a02cf0ee21-dev.lovable.app' : requestUrl.origin;
     try {
       const r = await fetch(provider === 'dodo' ? `${dodoBase}/checkouts` : 'https://api.kashier.io/v3/payment/sessions', {
         method: 'POST', headers: provider === 'dodo' ? { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' } : { Authorization: secret ?? '', 'api-key': key, 'Content-Type': 'application/json' },
