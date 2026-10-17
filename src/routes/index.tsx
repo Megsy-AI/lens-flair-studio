@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Toaster, toast } from "sonner";
 import {
   RefreshCw, Zap, ZapOff, Sparkles, Wand2, Crop, SlidersHorizontal, Trash2, Download, Crown, Check, ChevronLeft, Images,
-  Share2, Pencil, X, RotateCw, FlipHorizontal, FlipVertical, Palette, Loader2,
+  Share2, Pencil, Plus, X, RotateCw, FlipHorizontal, FlipVertical, Palette, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { aiEditImage, getPublicConfig } from "@/lib/ai.functions";
@@ -118,7 +118,7 @@ function App() {
             onGallery={() => setView("gallery")} onPro={() => setView("pro")} />
         )}
         {view === "gallery" && (
-          <Gallery photos={photos} onBack={() => setView("camera")}
+          <Gallery photos={photos} onBack={() => setView("camera")} onImported={refresh}
             onEdit={(p) => { setStudioPhoto(p); setView("studio"); }}
             onDelete={async (id) => { await deletePhoto(id); refresh(); }} />
         )}
@@ -231,28 +231,26 @@ function Camera({ last, onCapture, onGallery, onPro }: {
   void setZoom; void dial; void setDial;
 
   return (
-    <div className="cam-root relative flex h-full w-full flex-col">
-      <div className="cam-topbar relative z-20 flex items-center justify-center gap-9 pt-[max(env(safe-area-inset-top),18px)] pb-4">
+    <div className="cam-root relative h-full w-full">
+      <div className="cam-topbar absolute inset-x-0 top-0 z-20 flex items-center justify-center gap-9 pt-[max(env(safe-area-inset-top),18px)] pb-4">
         <button onClick={() => setFlash((f) => !f)} className="cam-icon" aria-label="Flash">
           {flash ? <Zap className="size-[22px] text-primary" fill="currentColor" strokeWidth={1.6} /> : <ZapOff className="size-[22px]" strokeWidth={1.6} />}
         </button>
         <button onClick={onPro} className="cam-pro" aria-label="Subscription">PRO</button>
       </div>
 
-      <div className="relative flex flex-1 items-center justify-center overflow-hidden">
-        <div className="relative w-full overflow-hidden transition-[aspect-ratio] duration-700 ease-ios"
-          style={{ aspectRatio: mode.aspect === 1 ? "1" : mode.aspect > 1 ? "16/9" : "3/4", maxHeight: "100%" }}>
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="relative h-full w-full overflow-hidden">
           <video ref={videoRef} autoPlay playsInline muted
             className="absolute inset-0 h-full w-full object-cover transition-[transform,filter] duration-500 ease-ios"
             style={{ transform: facing === "user" ? "scaleX(-1)" : undefined, filter: mode.id === "night" ? "brightness(1.3) contrast(1.05)" : undefined }} />
-          <div className="cam-grid pointer-events-none absolute inset-0" />
-          {mode.id === "portrait" && <div className="pop-in pointer-events-none absolute inset-0 shadow-[inset_0_0_140px_50px_var(--scrim)]" />}
+                    {mode.id === "portrait" && <div className="pop-in pointer-events-none absolute inset-0 shadow-[inset_0_0_140px_50px_var(--scrim)]" />}
           {err && <div className="absolute inset-0 grid place-items-center p-8 text-center text-[15px] text-muted-foreground">{err}</div>}
           {blink && <div className="absolute inset-0 bg-shutter" />}
         </div>
       </div>
 
-      <div className="cam-bottom pb-[max(env(safe-area-inset-bottom),18px)]">
+      <div className="cam-bottom absolute inset-x-0 bottom-0 z-20 pb-[max(env(safe-area-inset-bottom),18px)]">
         <div className="flex justify-center pt-5 pb-5">
           <button onClick={shoot} aria-label="Shutter" className="cam-shutter">
             <span className={busy ? "scale-[.86] opacity-80" : ""} />
@@ -291,10 +289,19 @@ function download(p: Photo) {
   const a = document.createElement("a"); a.href = p.src; a.download = `lumen-${p.id}.jpg`; a.click();
   toast.success("Saved");
 }
-function Gallery({ photos, onBack, onEdit, onDelete }: {
-  photos: Photo[]; onBack: () => void; onEdit: (p: Photo) => void; onDelete: (id: string) => void;
+function Gallery({ photos, onBack, onEdit, onDelete, onImported }: {
+  photos: Photo[]; onBack: () => void; onEdit: (p: Photo) => void; onDelete: (id: string) => void; onImported: () => void;
 }) {
   const [open, setOpen] = useState<Photo | null>(null);
+  const pickRef = useRef<HTMLInputElement>(null);
+  const importFiles = async (files: FileList | null) => {
+    if (!files?.length) return;
+    for (const f of Array.from(files)) {
+      const src = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(f); });
+      await savePhoto({ id: uid(), src: await render(src, {}, 2048), createdAt: f.lastModified || Date.now(), label: "Original" });
+    }
+    onImported();
+  };
   return (
     <div className="gallery-page relative h-full">
       <div className="h-full overflow-y-auto pb-[max(env(safe-area-inset-bottom),40px)]">
@@ -313,6 +320,12 @@ function Gallery({ photos, onBack, onEdit, onDelete }: {
         className="gallery-back absolute left-4 top-[max(env(safe-area-inset-top),16px)] grid size-11 place-items-center rounded-full transition ease-ios active:scale-90">
         <ChevronLeft className="size-5" />
       </button>
+      <input ref={pickRef} type="file" accept="image/*" multiple hidden onChange={(e) => { importFiles(e.target.files); e.target.value = ""; }} />
+      <button onClick={() => pickRef.current?.click()} aria-label="Add photos from device"
+        className="gallery-back absolute right-4 top-[max(env(safe-area-inset-top),16px)] grid size-11 place-items-center rounded-full transition ease-ios active:scale-90">
+        <Plus className="size-5" />
+      </button>
+      {photos.length === 0 && <button onClick={() => pickRef.current?.click()} className="absolute inset-0 m-auto h-fit w-fit text-[15px] text-primary">Add photos from your device</button>}
       {open && <Viewer photo={open} onClose={() => setOpen(null)} onEdit={() => { onEdit(open); setOpen(null); }} onDelete={() => { onDelete(open.id); setOpen(null); }} />}
     </div>
   );

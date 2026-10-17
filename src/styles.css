@@ -233,3 +233,10 @@ html, body { background: var(--background); color: var(--foreground); font-famil
 .gallery-page { background: oklch(0 0 0); }
 .gallery-fade { background: linear-gradient(to bottom, oklch(0 0 0 / .75), oklch(0 0 0 / .35) 55%, transparent); }
 .gallery-back { background: oklch(0.25 0 0 / .45); backdrop-filter: blur(24px) saturate(180%); box-shadow: inset 0 1px 0 oklch(1 0 0 / .25), inset 0 0 0 .5px oklch(1 0 0 / .18), 0 6px 20px oklch(0 0 0 / .35); color: var(--foreground); }
+
+.cam-topbar { background: linear-gradient(to bottom, oklch(0 0 0 / .55), transparent); }
+.cam-bottom { background: linear-gradient(to top, oklch(0 0 0 / .7), oklch(0 0 0 / .35) 70%, transparent); }
+.mode-pill { background: oklch(1 0 0 / .06); backdrop-filter: blur(20px) saturate(160%); box-shadow: inset 0 0 0 .5px oklch(1 0 0 / .12); }
+.mode-chip { color: oklch(1 0 0 / .92); text-shadow: 0 1px 2px oklch(0 0 0 / .4); }
+.mode-chip-active { color: var(--primary); background: oklch(0.12 0 0 / .72); box-shadow: inset 0 1px 0 oklch(1 0 0 / .18), inset 0 0 0 .5px oklch(1 0 0 / .14); }
+.gallery-add { right: 16px; left: auto; }
