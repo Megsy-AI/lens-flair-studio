@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Toaster, toast } from "sonner";
 import {
   RefreshCw, Zap, ZapOff, Sparkles, Wand2, Crop, SlidersHorizontal, Trash2, Download, Crown, Check, ChevronLeft, Images,
-  Share2, Pencil, Plus, X, RotateCw, FlipHorizontal, FlipVertical, Palette, Loader2,
+  Share2, Pencil, Plus, X, RotateCw, FlipHorizontal, FlipVertical, Palette, Loader2, Eraser, Scissors,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { aiEditImage, getPublicConfig } from "@/lib/ai.functions";
@@ -231,7 +231,7 @@ function Camera({ last, onCapture, onGallery, onPro }: {
     if (best !== modeIdx) setModeIdx(best);
   };
   void dial; void setDial;
-  const ZOOMS = [0.5, 1, 2, 8];
+  const ZOOMS = [1, 2, 10, 50, 200];
 
   return (
     <div className="cam-root relative h-full w-full">
@@ -283,6 +283,7 @@ function Camera({ last, onCapture, onGallery, onPro }: {
             {last?.pending && <div className="shimmer absolute inset-0" />}
           </button>
           <div className="mode-pill">
+            <span className="mode-center" aria-hidden />
             <div ref={railRef} onScroll={onRail} className="mode-rail" role="tablist" aria-label="Camera modes">
               {MODES.map((m, i) => (
                 <button key={m.id} role="tab" aria-selected={i === modeIdx} onClick={() => scrollToMode(i)}
@@ -360,7 +361,7 @@ function Viewer({ photo, onClose, onEdit, onDelete }: { photo: Photo; onClose: (
       <div className="absolute inset-0 grid place-items-center"
         onClick={() => setChrome((c) => !c)}
         onPointerDown={() => setTimeout(() => setOrig(true), 0)} onPointerUp={() => setOrig(false)} onPointerLeave={() => setOrig(false)}>
-        <img src={orig && photo.original ? photo.original : photo.src} className="max-h-full max-w-full object-contain transition-opacity duration-300" alt="" />
+        <img src={orig && photo.original ? photo.original : photo.src} className="h-full w-full object-cover transition-opacity duration-300" alt="" />
       </div>
       <div className={`absolute inset-x-0 top-0 flex items-center px-4 pt-[max(env(safe-area-inset-top),14px)] pb-3 transition-all duration-500 ease-ios ${chrome ? "" : "-translate-y-full opacity-0"}`}>
         <button onClick={onClose} className="glass flex h-10 items-center gap-1 rounded-full pl-4 pr-2 text-sm"><ChevronLeft className="size-5 " />Back</button>
@@ -410,7 +411,7 @@ function Studio({ photos, photo, setPhoto, modes, onBack, onPaywall, runAI, onSa
   photos: Photo[]; photo: Photo | null; setPhoto: (p: Photo | null) => void; modes: AIMode[]; onBack: () => void; onPaywall: () => void;
   runAI: (src: string, prompt: string, label: string, original?: string) => Promise<Photo | null>; onSaved: () => void;
 }) {
-  const [tab, setTab] = useState<"ai" | "filters" | "adjust" | "crop">("ai");
+  const [tab, setTab] = useState<"ai" | "filters" | "adjust" | "crop" | "tools">("adjust");
   const [cat, setCat] = useState("All");
   const [crop, setCrop] = useState(0);
   const [rotate, setRotate] = useState(0);
@@ -460,6 +461,18 @@ function Studio({ photos, photo, setPhoto, modes, onBack, onPaywall, runAI, onSa
     const p: Photo = { id: uid(), src: out, original: photo.src, createdAt: Date.now(), label: "Edited" };
     await savePhoto(p); onSaved(); setPhoto(p); reset();
   };
+  const removeBg = async () => {
+    setBusy(true);
+    try {
+      const { removeBackground } = await import("@imgly/background-removal");
+      const blob = await removeBackground(photo.src);
+      const src = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(blob); });
+      const p: Photo = { id: uid(), src, original: photo.src, createdAt: Date.now(), label: "No Background" };
+      await savePhoto(p); onSaved(); setPhoto(p);
+    } catch { toast.error("Couldn't remove the background"); }
+    setBusy(false);
+  };
+  const aiTool = (prompt: string, label: string) => applyEffect({ id: label, name: label, prompt, category: "Tools" } as AIMode);
   const cur = ADJ.find((a) => a.k === active)!;
   const shown = modes.filter((m) => cat === "All" || m.category === cat);
 
@@ -537,11 +550,21 @@ function Studio({ photos, photo, setPhoto, modes, onBack, onPaywall, runAI, onSa
             </div>
           </div>
         )}
+        {tab === "tools" && (
+          <div className="flex justify-center gap-6 pt-4">
+            {([[Scissors, "Remove BG", removeBg], [Eraser, "Clean Up", () => aiTool("Remove all people from this photo and fill the area naturally with the surrounding background. Keep everything else unchanged.", "Clean Up")], [Wand2, "Erase Objects", () => aiTool("Remove distracting small objects, clutter and blemishes from this photo, filling naturally. Keep the main subject unchanged.", "Erased")]] as const).map(([I, l, fn]) => (
+              <button key={l} disabled={busy} onClick={fn} className="flex flex-col items-center gap-2 disabled:opacity-40">
+                <span className="tool-circle"><I className="size-6" strokeWidth={1.6} /></span>
+                <span className="text-[13px] font-semibold">{l}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      <div className="glass-strong mx-auto mb-[max(env(safe-area-inset-bottom),18px)] flex gap-1 rounded-full p-1.5">
-        {([["ai", "AI", Sparkles], ["filters", "Filters", Palette], ["adjust", "Adjust", SlidersHorizontal], ["crop", "Crop", Crop]] as const).map(([k, l, I]) => (
-          <button key={k} onClick={() => setTab(k)} className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm transition-all duration-300 ease-ios ${tab === k ? "bg-glass-strong text-primary" : "text-muted-foreground"}`}><I className="size-4" />{l}</button>
+      <div className="edit-bar mx-auto mb-[max(env(safe-area-inset-bottom),18px)] flex rounded-full px-2 py-1.5">
+        {([["ai", "Styles", Sparkles], ["adjust", "Adjust", SlidersHorizontal], ["filters", "Filters", Palette], ["crop", "Crop", Crop], ["tools", "Tools", Eraser]] as const).map(([k, l, I]) => (
+          <button key={k} onClick={() => setTab(k)} className={`edit-tab ${tab === k ? "edit-tab-on" : ""}`}><I className="size-[22px]" strokeWidth={1.6} /><span>{l}</span></button>
         ))}
       </div>
 
