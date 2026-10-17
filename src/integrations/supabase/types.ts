@@ -14,7 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bot_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: []
+      }
+      lumen_payment_orders: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          device_hash: string
+          expires_at: string | null
+          id: string
+          provider: string
+          provider_session: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          device_hash: string
+          expires_at?: string | null
+          id?: string
+          provider: string
+          provider_session?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          device_hash?: string
+          expires_at?: string | null
+          id?: string
+          provider?: string
+          provider_session?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
