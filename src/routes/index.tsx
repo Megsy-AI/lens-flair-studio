@@ -271,7 +271,9 @@ function Camera({ last, onCapture, onGallery, onPro }: {
               ))}
             </div>
           </div>
-          <span className="size-[52px] shrink-0" aria-hidden />
+          <button onClick={() => { setSpin((x) => x + 180); setFacing((v) => (v === "user" ? "environment" : "user")); }} className="cam-flip" aria-label="Switch camera">
+            <RefreshCw className="size-[30px]" strokeWidth={1.8} style={{ transform: `rotate(${spin}deg)` }} />
+          </button>
         </div>
       </div>
     </div>
